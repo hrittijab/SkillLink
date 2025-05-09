@@ -1,33 +1,44 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import {
+    ActivityIndicator,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const email = await AsyncStorage.getItem('userEmail');
-        const response = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(email)}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data);
-        } else {
-          console.error('Failed to fetch user');
+  useFocusEffect(
+    useCallback(() => {
+      const fetchUser = async () => {
+        setLoading(true);
+        try {
+          const email = await AsyncStorage.getItem('userEmail');
+          const response = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(email)}`);
+          if (response.ok) {
+            const data = await response.json();
+            setUser(data);
+          } else {
+            console.error('Failed to fetch user');
+          }
+        } catch (error) {
+          console.error('Error fetching user:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchUser();
-  }, []);
+      fetchUser();
+    }, [])
+  );
 
   if (loading) {
     return (
@@ -48,15 +59,14 @@ export default function ProfileScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {user.profilePictureUrl ? (
-  <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
-    ) : (
-    <View style={styles.initialAvatar}>
-        <Text style={styles.initialText}>
-        {user.firstName?.charAt(0)?.toUpperCase() ?? "?"}
-        </Text>
-    </View>
-    )}
-
+        <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
+      ) : (
+        <View style={styles.initialAvatar}>
+          <Text style={styles.initialText}>
+            {user.firstName?.charAt(0)?.toUpperCase() ?? "?"}
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.name}>{user.firstName} {user.lastName}</Text>
       <Text style={styles.email}>{user.email}</Text>
@@ -82,7 +92,6 @@ export default function ProfileScreen() {
         </>
       ) : null}
 
-      {/* Edit Profile Button */}
       <TouchableOpacity style={styles.editButton} onPress={() => router.push('/editprofile')}>
         <Text style={styles.editButtonText}>Edit Profile</Text>
       </TouchableOpacity>
@@ -94,47 +103,81 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     padding: 20,
-    backgroundColor: '#F9F9FF',
+    backgroundColor: '#f0f4ff',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f0f4ff',
   },
   avatar: {
     width: 120,
     height: 120,
     borderRadius: 60,
     marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#6D83F2',
+  },
+  initialAvatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#6D83F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  initialText: {
+    fontSize: 48,
+    color: 'white',
+    fontWeight: 'bold',
   },
   name: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#333',
     marginBottom: 5,
   },
   email: {
     fontSize: 16,
-    color: 'gray',
+    color: '#666',
     marginBottom: 20,
   },
   label: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#444',
     alignSelf: 'flex-start',
-    marginTop: 10,
+    marginTop: 12,
   },
   info: {
     fontSize: 16,
-    alignSelf: 'flex-start',
-    marginBottom: 10,
+    backgroundColor: '#fff',
+    padding: 10,
+    width: '100%',
+    borderRadius: 8,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    marginBottom: 8,
     color: '#333',
   },
   editButton: {
-    marginTop: 20,
+    marginTop: 30,
     backgroundColor: '#6D83F2',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
+    paddingVertical: 14,
+    paddingHorizontal: 40,
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3,
+    elevation: 3,
   },
   editButtonText: {
     color: 'white',

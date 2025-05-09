@@ -103,6 +103,16 @@ export default function HomeScreen() {
               <Text style={styles.modalButtonText}>Change Password</Text>
             </Pressable>
 
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => {
+                setSettingsVisible(false);
+                setTimeout(() => router.push('/myposts'), 100);
+              }}
+            >
+              <Text style={styles.modalButtonText}>My Posts</Text>
+            </Pressable>
+
             <Pressable style={styles.modalButton} onPress={handleLogout}>
               <Text style={styles.modalButtonText}>Logout</Text>
             </Pressable>

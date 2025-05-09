@@ -1,7 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 export default function ExploreSkillsScreen() {
   const router = useRouter();
@@ -19,7 +26,8 @@ export default function ExploreSkillsScreen() {
       const response = await fetch('http://localhost:8080/api/skills/all');
       if (response.ok) {
         const data = await response.json();
-        setSkills(data || []);
+        const sortedData = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setSkills(sortedData);
       } else {
         alert('Failed to load skills');
       }
@@ -31,28 +39,50 @@ export default function ExploreSkillsScreen() {
   };
 
   const filteredSkills = skills.filter(skill =>
-    (skill && skill.skillName ? skill.skillName.toLowerCase() : '').includes(searchQuery.toLowerCase())
+    (skill.skillName || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const timeAgo = (isoString) => {
+    const now = new Date();
+    const postTime = new Date(isoString);
+    const diffMinutes = Math.floor((now - postTime) / (1000 * 60));
+
+    if (diffMinutes < 1) return 'just now';
+    if (diffMinutes < 60) return `${diffMinutes} minute(s) ago`;
+    const hours = Math.floor(diffMinutes / 60);
+    if (hours < 24) return `${hours} hour(s) ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day(s) ago`;
+  };
 
   const renderSkillCard = ({ item }) => {
     if (!item) return null;
 
     return (
       <View style={styles.card}>
-        <Text style={styles.skillName}>
-          {item.skillName || 'Unnamed Skill'}
+        <Text style={styles.posterName}>
+          {item.firstName || 'Anonymous'} {item.lastName || ''}
         </Text>
 
-        <Text style={styles.skillDetails}>
-          {(item.preferenceType || 'Unknown')} • {(item.paymentType || 'Unknown')}
+        <Text style={styles.timeStamp}>
+          {item.createdAt ? timeAgo(item.createdAt) : 'Posted just now'}
+        </Text>
+
+        <Text style={styles.skillTitle}>{item.skillName}</Text>
+
+        <Text style={styles.detailsText}>
+          <Text style={{ fontWeight: 'bold' }}>{item.preferenceType}</Text> •{' '}
+          <Text style={{ fontWeight: 'bold' }}>{item.paymentType}</Text>
         </Text>
 
         {item.paymentType === 'PAID' && item.price != null && (
-          <Text style={styles.skillDetails}>Price: ${item.price}</Text>
+          <Text style={styles.extraDetail}>💰 ${item.price}</Text>
         )}
 
-        {item.paymentType === 'EXCHANGE' && item.exchangeSkill && (
-          <Text style={styles.skillDetails}>Exchange for: {item.exchangeSkill}</Text>
+        {item.paymentType === 'EXCHANGE' && item.exchangeSkills && (
+          <Text style={styles.extraDetail}>
+            🤝 Exchange for: {Array.isArray(item.exchangeSkills) ? item.exchangeSkills.join(', ') : item.exchangeSkills}
+          </Text>
         )}
       </View>
     );
@@ -75,7 +105,7 @@ export default function ExploreSkillsScreen() {
         ) : (
           <FlatList
             data={filteredSkills}
-            keyExtractor={(item, index) => (item && item.id ? item.id.toString() : index.toString())}
+            keyExtractor={(item, index) => (item?.id || index.toString())}
             renderItem={renderSkillCard}
             contentContainerStyle={styles.listContent}
           />
@@ -122,13 +152,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
-  skillName: {
+  posterName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#222',
+    marginBottom: 2,
+  },
+  timeStamp: {
+    fontSize: 12,
+    color: '#777',
+    marginBottom: 5,
+  },
+  skillTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 5,
+    color: '#333',
   },
-  skillDetails: {
+  detailsText: {
+    fontSize: 14,
+    marginBottom: 4,
+    color: '#444',
+  },
+  extraDetail: {
     fontSize: 14,
     color: '#555',
+    marginTop: 2,
   },
 });

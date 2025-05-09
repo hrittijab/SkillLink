@@ -6,7 +6,7 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleShee
 
 export default function ProfileSetupScreen() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true); // ⭐ loading spinner
+  const [loading, setLoading] = useState(true); 
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -25,7 +25,7 @@ export default function ProfileSetupScreen() {
           if (response.ok) {
             const userData = await response.json();
 
-            // ⭐ Check if profile already exists
+            //  Check if profile already exists
             if (userData.firstName && userData.lastName && userData.bio) {
               // Profile is already filled — skip to home
               router.push('/home');
@@ -48,7 +48,7 @@ export default function ProfileSetupScreen() {
       } catch (error) {
         console.error('Error fetching user profile:', error);
       } finally {
-        setLoading(false); // ⭐ Done loading
+        setLoading(false); 
       }
     };
     fetchProfile();
@@ -98,7 +98,6 @@ export default function ProfileSetupScreen() {
   };
 
   if (loading) {
-    // ⭐ Show loading spinner while fetching profile
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6D83F2" />

@@ -1,0 +1,226 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+
+export default function EditProfileScreen() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [editedUser, setEditedUser] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const email = await AsyncStorage.getItem('userEmail');
+      const res = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(email)}`);
+      const data = await res.json();
+      setUser(data);
+      setEditedUser(data); // editable copy
+    };
+    fetchUser();
+  }, []);
+
+  const handleFieldChange = (key, value) => {
+    setEditedUser({ ...editedUser, [key]: value });
+  };
+
+  const handleSaveClick = () => {
+    setShowPasswordModal(true);
+  };
+
+  const handleVerifyAndSave = async () => {
+    try {
+      const email = await AsyncStorage.getItem('userEmail');
+
+      const verifyRes = await fetch(`http://localhost:8080/api/users/verify-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!verifyRes.ok) {
+        Alert.alert('Incorrect Password', 'Please enter the correct password to save changes.');
+        return;
+      }
+
+      const updateRes = await fetch(`http://localhost:8080/api/users/update`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editedUser),
+      });
+
+      if (updateRes.ok) {
+        Alert.alert('Success', 'Your profile was updated.');
+        setShowPasswordModal(false);
+        router.back();
+      } else {
+        throw new Error('Update failed');
+      }
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Error', 'Could not update your profile.');
+    }
+  };
+
+  if (!editedUser) {
+    return (
+      <View style={styles.centered}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.label}>First Name</Text>
+      <TextInput
+        style={styles.input}
+        value={editedUser.firstName}
+        onChangeText={(text) => handleFieldChange('firstName', text)}
+      />
+
+      <Text style={styles.label}>Last Name</Text>
+      <TextInput
+        style={styles.input}
+        value={editedUser.lastName}
+        onChangeText={(text) => handleFieldChange('lastName', text)}
+      />
+
+      <Text style={styles.label}>Bio</Text>
+      <TextInput
+        style={styles.input}
+        value={editedUser.bio}
+        onChangeText={(text) => handleFieldChange('bio', text)}
+        multiline
+      />
+
+      <Text style={styles.label}>Skills Offered</Text>
+      <TextInput
+        style={styles.input}
+        value={editedUser.skillsOffered}
+        onChangeText={(text) => handleFieldChange('skillsOffered', text)}
+      />
+
+      <Text style={styles.label}>Skills Wanted</Text>
+      <TextInput
+        style={styles.input}
+        value={editedUser.skillsWanted}
+        onChangeText={(text) => handleFieldChange('skillsWanted', text)}
+      />
+
+      <TouchableOpacity style={styles.saveButton} onPress={handleSaveClick}>
+        <Text style={styles.saveButtonText}>Save Changes</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <Text style={styles.backButtonText}>Back to Profile</Text>
+      </TouchableOpacity>
+
+      {/* Password Confirmation Modal */}
+      <Modal visible={showPasswordModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Confirm Changes</Text>
+            <Text>Enter your password to confirm changes:</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity style={styles.saveButton} onPress={handleVerifyAndSave}>
+              <Text style={styles.saveButtonText}>Confirm and Save</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowPasswordModal(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#F9F9FF',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 10,
+  },
+  input: {
+    backgroundColor: 'white',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    borderColor: '#ccc',
+    borderWidth: 1,
+  },
+  saveButton: {
+    backgroundColor: '#6D83F2',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  backButton: {
+    backgroundColor: '#ccc',
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  backButtonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  cancelText: {
+    marginTop: 10,
+    color: '#6D83F2',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});

@@ -30,7 +30,7 @@ export default function SignupScreen() {
         }),
       });
   
-      const data = await response.json(); // ⭐ ALWAYS parse json immediately
+      const data = await response.json(); 
   
       if (response.ok) {
         await AsyncStorage.setItem('userEmail', email);

@@ -1,8 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Picker, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
 
 export default function AddPostScreen() {
   const router = useRouter();
@@ -11,59 +21,77 @@ export default function AddPostScreen() {
   const [preferenceType, setPreferenceType] = useState('TEACH');
   const [paymentType, setPaymentType] = useState('FREE');
   const [price, setPrice] = useState('');
-  const [exchangeSkill, setExchangeSkill] = useState('');
+  const [exchangeSkillInput, setExchangeSkillInput] = useState('');
+  const [exchangeSkills, setExchangeSkills] = useState([]);
+
+  const addExchangeSkill = () => {
+    const trimmed = exchangeSkillInput.trim();
+    if (trimmed && !exchangeSkills.includes(trimmed)) {
+      setExchangeSkills([...exchangeSkills, trimmed]);
+      setExchangeSkillInput('');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!skillName) {
-      alert('Please enter a skill name.');
+      Alert.alert('Missing Field', 'Please enter a skill name.');
       return;
     }
 
     try {
       const userEmail = await AsyncStorage.getItem('userEmail');
       if (!userEmail) {
-        alert('No user logged in. Please login again.');
+        Alert.alert('Login Required', 'Please log in again.');
         router.push('/login');
         return;
       }
 
       const payload = {
-        userEmail: userEmail,
-        skillName: skillName,
-        preferenceType: preferenceType,
-        paymentType: paymentType,
+        userEmail,
+        skillName,
+        preferenceType,
+        paymentType,
       };
 
       if (paymentType === 'PAID') {
+        if (!price) {
+          Alert.alert('Missing Price', 'Please enter a price.');
+          return;
+        }
         payload.price = parseFloat(price);
       }
+
       if (paymentType === 'EXCHANGE') {
-        payload.exchangeSkill = exchangeSkill;
+        if (exchangeSkills.length === 0) {
+          Alert.alert('Missing Skills', 'Please add at least one skill to exchange.');
+          return;
+        }
+        payload.exchangeSkills = exchangeSkills;
       }
 
       const response = await fetch('http://localhost:8080/api/skills/add', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
-        alert('Skill posted successfully!');
+        Alert.alert('Success', result.message || 'Skill posted!');
         router.push('/home');
       } else {
-        alert('Failed to post skill.');
+        Alert.alert('Failed', result.message || 'Something went wrong.');
       }
     } catch (error) {
-      console.error('Error posting skill:', error);
-      alert('Something went wrong. Try again.');
+      console.error('Error submitting skill:', error);
+      Alert.alert('Error', 'Could not submit skill.');
     }
   };
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: '100%', alignItems: 'center' }}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', alignItems: 'center' }}>
         <Text style={styles.title}>Add a New Skill</Text>
 
         <View style={styles.formContainer}>
@@ -75,21 +103,13 @@ export default function AddPostScreen() {
           />
 
           <Text style={styles.label}>Preference Type</Text>
-          <Picker
-            selectedValue={preferenceType}
-            onValueChange={(itemValue) => setPreferenceType(itemValue)}
-            style={styles.picker}
-          >
+          <Picker selectedValue={preferenceType} onValueChange={setPreferenceType} style={styles.picker}>
             <Picker.Item label="Teach" value="TEACH" />
             <Picker.Item label="Learn" value="LEARN" />
           </Picker>
 
           <Text style={styles.label}>Payment Type</Text>
-          <Picker
-            selectedValue={paymentType}
-            onValueChange={(itemValue) => setPaymentType(itemValue)}
-            style={styles.picker}
-          >
+          <Picker selectedValue={paymentType} onValueChange={setPaymentType} style={styles.picker}>
             <Picker.Item label="Free" value="FREE" />
             <Picker.Item label="Paid" value="PAID" />
             <Picker.Item label="Exchange" value="EXCHANGE" />
@@ -106,12 +126,28 @@ export default function AddPostScreen() {
           )}
 
           {paymentType === 'EXCHANGE' && (
-            <TextInput
-              style={styles.input}
-              placeholder="Skill you want in exchange"
-              value={exchangeSkill}
-              onChangeText={setExchangeSkill}
-            />
+            <>
+              <Text style={styles.label}>Skills to exchange (one-for-one)</Text>
+              <View style={styles.row}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="e.g. Spanish"
+                  value={exchangeSkillInput}
+                  onChangeText={setExchangeSkillInput}
+                  onSubmitEditing={addExchangeSkill}
+                />
+                <Pressable style={styles.addButton} onPress={addExchangeSkill}>
+                  <Text style={styles.addButtonText}>Add</Text>
+                </Pressable>
+              </View>
+              <View style={styles.tagsContainer}>
+                {exchangeSkills.map((skill, index) => (
+                  <View key={index} style={styles.tag}>
+                    <Text style={styles.tagText}>{skill}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
           )}
 
           <Pressable style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]} onPress={handleSubmit}>
@@ -124,63 +160,19 @@ export default function AddPostScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 32,
-    color: 'white',
-    fontWeight: 'bold',
-    marginVertical: 30,
-    textAlign: 'center',
-  },
-  formContainer: {
-    width: '85%',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  label: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  picker: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  submitButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#6D83F2',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  buttonPressed: {
-    backgroundColor: '#5a6fe0',
-  },
+  container: { flex: 1 },
+  title: { fontSize: 32, color: 'white', fontWeight: 'bold', marginVertical: 30, textAlign: 'center' },
+  formContainer: { width: '85%', backgroundColor: 'white', borderRadius: 20, padding: 20, elevation: 6, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12 },
+  input: { height: 50, backgroundColor: '#f5f5f5', borderRadius: 10, paddingHorizontal: 15, fontSize: 16, marginBottom: 15 },
+  label: { fontSize: 16, color: '#555', marginBottom: 5, marginTop: 10 },
+  picker: { height: 50, backgroundColor: '#f5f5f5', borderRadius: 10, marginBottom: 15 },
+  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  addButton: { backgroundColor: '#6D83F2', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, marginLeft: 10 },
+  addButtonText: { color: 'white', fontWeight: 'bold' },
+  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
+  tag: { backgroundColor: '#e0e0e0', borderRadius: 15, paddingHorizontal: 10, paddingVertical: 5, margin: 3 },
+  tagText: { fontSize: 14 },
+  submitButton: { height: 50, backgroundColor: '#6D83F2', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
+  submitButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  buttonPressed: { backgroundColor: '#5a6fe0' },
 });

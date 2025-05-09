@@ -1,32 +1,60 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import {
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
-  const handleGoToExploreSkills = () => router.push('/skills');
-  const handleAddPost = () => router.push('/add-post'); // ⭐ you will make this page later
+  const [deletePassword, setDeletePassword] = useState('');
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleDeleteAccount = () => {
-    // TODO: Add delete logic
-    alert('Delete Account clicked!');
-  };
+  const handleGoToExploreSkills = () => router.push('/exploreskills');
+  const handleAddPost = () => router.push('/addpost');
 
   const handleProfileDetails = () => {
-    router.push('/profile'); // or '/profile-details' if you make a new page
+    setSettingsVisible(false);
+    setTimeout(() => router.push('/profile'), 100);
   };
 
   const handleChangePassword = () => {
-    router.push('/change-password'); // ⭐ you will make this page later
+    setSettingsVisible(false);
+    setTimeout(() => setShowChangePassword(true), 100);
+  };
+
+  const handleDeleteAccount = () => {
+    setSettingsVisible(false);
+    setTimeout(() => setShowDeleteConfirm(true), 100);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userEmail');
+      router.replace('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      alert('Logout failed. Please try again.');
+    }
   };
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      {/* Avatar in top-right corner */}
+      {/* Avatar */}
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={() => setSettingsVisible(true)}>
           <View style={styles.avatarCircle}>
@@ -35,17 +63,24 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Main */}
       <View style={styles.innerContainer}>
         <Text style={styles.title}>Welcome to SkillLink! 🎉</Text>
         <Text style={styles.subtitle}>
           Start exploring skills, offer to teach, or connect with others!
         </Text>
 
-        <Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} onPress={handleGoToExploreSkills}>
+        <Pressable
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          onPress={handleGoToExploreSkills}
+        >
           <Text style={styles.buttonText}>Explore Skills</Text>
         </Pressable>
 
-        <Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} onPress={handleAddPost}>
+        <Pressable
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          onPress={handleAddPost}
+        >
           <Text style={styles.buttonText}>Add a Post</Text>
         </Pressable>
       </View>
@@ -68,8 +103,115 @@ export default function HomeScreen() {
               <Text style={styles.modalButtonText}>Change Password</Text>
             </Pressable>
 
+            <Pressable style={styles.modalButton} onPress={handleLogout}>
+              <Text style={styles.modalButtonText}>Logout</Text>
+            </Pressable>
+
             <Pressable style={styles.closeButton} onPress={() => setSettingsVisible(false)}>
               <Text style={styles.closeButtonText}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal visible={showDeleteConfirm} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Confirm Deletion</Text>
+            <Text>Enter your password to delete your account:</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              secureTextEntry
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+            />
+            <Pressable
+              style={styles.modalButton}
+              onPress={async () => {
+                const email = await AsyncStorage.getItem('userEmail');
+                const res = await fetch('http://localhost:8080/api/users/verify-password', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email, password: deletePassword }),
+                });
+
+                if (res.ok) {
+                  await fetch(`http://localhost:8080/api/users/delete?email=${encodeURIComponent(email)}`, {
+                    method: 'DELETE',
+                  });
+                  await AsyncStorage.removeItem('userEmail');
+                  setShowDeleteConfirm(false);
+                  router.replace('/signup');
+                } else {
+                  alert('Incorrect password.');
+                }
+              }}
+            >
+              <Text style={styles.modalButtonText}>Confirm Delete</Text>
+            </Pressable>
+            <Pressable onPress={() => setShowDeleteConfirm(false)}>
+              <Text style={styles.closeButtonText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Change Password Modal */}
+      <Modal visible={showChangePassword} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Change Password</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Old Password"
+              secureTextEntry
+              value={oldPassword}
+              onChangeText={setOldPassword}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="New Password"
+              secureTextEntry
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Retype New Password"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+
+            <Pressable
+              style={styles.modalButton}
+              onPress={async () => {
+                if (newPassword !== confirmPassword) {
+                  alert('Passwords do not match!');
+                  return;
+                }
+                const email = await AsyncStorage.getItem('userEmail');
+                const res = await fetch('http://localhost:8080/api/users/change-password', {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email, oldPassword, newPassword }),
+                });
+
+                if (res.ok) {
+                  alert('Password changed!');
+                  setShowChangePassword(false);
+                } else {
+                  alert('Old password incorrect.');
+                }
+              }}
+            >
+              <Text style={styles.modalButtonText}>Change Password</Text>
+            </Pressable>
+            <Pressable onPress={() => setShowChangePassword(false)}>
+              <Text style={styles.closeButtonText}>Cancel</Text>
             </Pressable>
           </View>
         </View>
@@ -168,5 +310,15 @@ const styles = StyleSheet.create({
     color: '#6D83F2',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginVertical: 8,
+    backgroundColor: '#fff',
   },
 });

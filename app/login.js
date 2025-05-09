@@ -1,8 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -18,18 +28,18 @@ export default function LoginScreen() {
         },
         body: JSON.stringify({
           email: email,
-          password: password,
+          passwordHash: password, 
         }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        alert('Login successful!');
-        console.log('Login success:', data);
-        router.push('/home'); // after login go to Home
+      const data = await response.json(); 
+
+      if (data.message === 'Login successful!') {
+        await AsyncStorage.setItem('userEmail', email); 
+        alert(data.message);
+        router.push('/home');
       } else {
-        const data = await response.json();
-        alert(`Login failed: ${data.message || 'Invalid credentials'}`);
+        alert(`Login failed: ${data.message}`);
       }
     } catch (error) {
       console.error('Error during login:', error);
@@ -39,7 +49,10 @@ export default function LoginScreen() {
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ width: '100%', alignItems: 'center' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ width: '100%', alignItems: 'center' }}
+      >
         <Text style={styles.title}>SkillLink</Text>
 
         <View style={styles.formContainer}>
@@ -75,7 +88,7 @@ export default function LoginScreen() {
           <Link href="/signup" asChild>
             <TouchableOpacity>
               <Text style={styles.signupText}>
-                Don't have an account? <Text style={styles.signupLink}>Sign Up</Text>
+                Don&apos;t have an account? <Text style={styles.signupLink}>Sign Up</Text>
               </Text>
             </TouchableOpacity>
           </Link>
@@ -86,17 +99,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 42,
-    color: 'white',
-    fontWeight: 'bold',
-    marginBottom: 30,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 42, color: 'white', fontWeight: 'bold', marginBottom: 30 },
   formContainer: {
     width: '85%',
     backgroundColor: 'white',
@@ -116,14 +120,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingHorizontal: 10,
   },
-  icon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-  },
+  icon: { marginRight: 8 },
+  input: { flex: 1, height: 50, fontSize: 16 },
   loginButton: {
     width: '100%',
     height: 50,
@@ -133,22 +131,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  loginButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  signupText: {
-    marginTop: 20,
-    textAlign: 'center',
-    color: '#333',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: '#6D83F2',
-    fontWeight: 'bold',
-  },
-  buttonPressed: {
-    backgroundColor: '#5a6fe0',
-  },
+  loginButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  signupText: { marginTop: 20, textAlign: 'center', color: '#333', fontSize: 14 },
+  signupLink: { color: '#6D83F2', fontWeight: 'bold' },
+  buttonPressed: { backgroundColor: '#5a6fe0' },
 });

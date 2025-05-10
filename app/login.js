@@ -2,8 +2,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -13,6 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -20,30 +22,32 @@ export default function LoginScreen() {
   const router = useRouter();
 
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
-      const response = await fetch('http://localhost:8080/api/login', {
+      const response = await fetch(`${BASE_URL}/api/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          passwordHash: password, 
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail, passwordHash: password }),
       });
 
-      const data = await response.json(); 
+      const data = await response.json();
 
-      if (data.message === 'Login successful!') {
-        await AsyncStorage.setItem('userEmail', email); 
-        alert(data.message);
+      if (response.ok && data.message === 'Login successful!') {
+        await AsyncStorage.setItem('userEmail', normalizedEmail);
+        Alert.alert('Success', 'Welcome back!');
         router.push('/home');
       } else {
-        alert(`Login failed: ${data.message}`);
+        Alert.alert('Login Failed', data.message || 'Invalid credentials.');
       }
     } catch (error) {
-      console.error('Error during login:', error);
-      alert('Login failed. Please check your network or server.');
+      console.error('Login error:', error);
+      Alert.alert('Error', 'Unable to reach the server. Please try again.');
     }
   };
 
@@ -99,8 +103,17 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 42, color: 'white', fontWeight: 'bold', marginBottom: 30 },
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 42,
+    color: 'white',
+    fontWeight: 'bold',
+    marginBottom: 30,
+  },
   formContainer: {
     width: '85%',
     backgroundColor: 'white',
@@ -120,8 +133,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingHorizontal: 10,
   },
-  icon: { marginRight: 8 },
-  input: { flex: 1, height: 50, fontSize: 16 },
+  icon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    height: 50,
+    fontSize: 16,
+  },
   loginButton: {
     width: '100%',
     height: 50,
@@ -131,8 +150,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  loginButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  signupText: { marginTop: 20, textAlign: 'center', color: '#333', fontSize: 14 },
-  signupLink: { color: '#6D83F2', fontWeight: 'bold' },
-  buttonPressed: { backgroundColor: '#5a6fe0' },
+  loginButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  signupText: {
+    marginTop: 20,
+    textAlign: 'center',
+    color: '#333',
+    fontSize: 14,
+  },
+  signupLink: {
+    color: '#6D83F2',
+    fontWeight: 'bold',
+  },
+  buttonPressed: {
+    backgroundColor: '#5a6fe0',
+  },
 });

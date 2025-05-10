@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import {
+    ActivityIndicator,
     Alert,
     ScrollView,
     StyleSheet,
@@ -9,55 +10,65 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function MyPostsScreen() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUserPosts = async () => {
+  const fetchUserPosts = useCallback(async () => {
+    try {
       const email = await AsyncStorage.getItem('userEmail');
-      console.log('Fetching posts for:', email);
-      const res = await fetch(`http://localhost:8080/api/skills/user?email=${encodeURIComponent(email)}`);
+      if (!email) {
+        Alert.alert('Error', 'User not logged in');
+        router.replace('/login');
+        return;
+      }
+
+      const res = await fetch(`${BASE_URL}/api/skills/user?email=${encodeURIComponent(email)}`);
       const data = await res.json();
       setPosts(data);
+    } catch (err) {
+      console.error('Error fetching user posts:', err);
+      Alert.alert('Error', 'Could not load your posts.');
+    } finally {
       setLoading(false);
-    };
+    }
+  }, [router]);
 
+  useEffect(() => {
     fetchUserPosts();
-  }, []);
+  }, [fetchUserPosts]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserPosts();
+    }, [fetchUserPosts])
+  );
 
   const handleDelete = async (id) => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this post?', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
+      { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
-            console.log('Attempting to delete post with ID:', id);
-            const res = await fetch(`http://localhost:8080/api/skills/delete/${id}`, {
+            const res = await fetch(`${BASE_URL}/api/skills/delete/${id}`, {
               method: 'DELETE',
             });
 
-            const text = await res.text();
-            console.log('Delete response status:', res.status);
-            console.log('Delete response body:', text);
-
             if (!res.ok) {
+              const text = await res.text();
               Alert.alert('Delete Failed', text || 'Something went wrong.');
               return;
             }
 
-            // Remove post from state
             setPosts((prev) => prev.filter((post) => post.id !== id));
           } catch (err) {
-            console.error('Error while deleting post:', err);
-            Alert.alert('Error', 'Delete request failed.');
+            console.error('Delete error:', err);
+            Alert.alert('Error', 'Failed to delete post.');
           }
         },
       },
@@ -74,6 +85,7 @@ export default function MyPostsScreen() {
   if (loading) {
     return (
       <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#6D83F2" />
         <Text>Loading your posts...</Text>
       </View>
     );

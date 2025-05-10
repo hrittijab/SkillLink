@@ -2,17 +2,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function AddPostScreen() {
   const router = useRouter();
@@ -69,7 +70,7 @@ export default function AddPostScreen() {
         payload.exchangeSkills = exchangeSkills;
       }
 
-      const response = await fetch('http://localhost:8080/api/skills/add', {
+      const response = await fetch(`${BASE_URL}/api/skills/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -91,7 +92,10 @@ export default function AddPostScreen() {
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', alignItems: 'center' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ width: '100%', alignItems: 'center' }}
+      >
         <Text style={styles.title}>Add a New Skill</Text>
 
         <View style={styles.formContainer}>
@@ -150,7 +154,10 @@ export default function AddPostScreen() {
             </>
           )}
 
-          <Pressable style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]} onPress={handleSubmit}>
+          <Pressable
+            style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+            onPress={handleSubmit}
+          >
             <Text style={styles.submitButtonText}>Post Skill</Text>
           </Pressable>
         </View>
@@ -161,18 +168,88 @@ export default function AddPostScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  title: { fontSize: 32, color: 'white', fontWeight: 'bold', marginVertical: 30, textAlign: 'center' },
-  formContainer: { width: '85%', backgroundColor: 'white', borderRadius: 20, padding: 20, elevation: 6, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12 },
-  input: { height: 50, backgroundColor: '#f5f5f5', borderRadius: 10, paddingHorizontal: 15, fontSize: 16, marginBottom: 15 },
-  label: { fontSize: 16, color: '#555', marginBottom: 5, marginTop: 10 },
-  picker: { height: 50, backgroundColor: '#f5f5f5', borderRadius: 10, marginBottom: 15 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  addButton: { backgroundColor: '#6D83F2', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, marginLeft: 10 },
-  addButtonText: { color: 'white', fontWeight: 'bold' },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
-  tag: { backgroundColor: '#e0e0e0', borderRadius: 15, paddingHorizontal: 10, paddingVertical: 5, margin: 3 },
-  tagText: { fontSize: 14 },
-  submitButton: { height: 50, backgroundColor: '#6D83F2', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-  submitButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  buttonPressed: { backgroundColor: '#5a6fe0' },
+  title: {
+    fontSize: 32,
+    color: 'white',
+    fontWeight: 'bold',
+    marginVertical: 30,
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+  },
+  input: {
+    height: 50,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  picker: {
+    height: 50,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  addButton: {
+    backgroundColor: '#6D83F2',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginLeft: 10,
+  },
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginVertical: 10,
+  },
+  tag: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    margin: 3,
+  },
+  tagText: {
+    fontSize: 14,
+  },
+  submitButton: {
+    height: 50,
+    backgroundColor: '#6D83F2',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonPressed: {
+    backgroundColor: '#5a6fe0',
+  },
 });

@@ -13,6 +13,7 @@ import {
     TextInput,
     View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function EditPostScreen() {
   const { id } = useLocalSearchParams();
@@ -23,7 +24,7 @@ export default function EditPostScreen() {
 
   useEffect(() => {
     const fetchPost = async () => {
-      const res = await fetch(`http://localhost:8080/api/skills/all`);
+      const res = await fetch(`${BASE_URL}/api/skills/all`);
       const data = await res.json();
       const targetPost = data.find((p) => p.id === id);
       setPost(targetPost);
@@ -48,12 +49,12 @@ export default function EditPostScreen() {
       const userEmail = await AsyncStorage.getItem('userEmail');
       const payload = {
         ...post,
-        userEmail, // reattach
+        userEmail,
         price: post.paymentType === 'PAID' ? parseFloat(post.price) : null,
         exchangeSkills: post.paymentType === 'EXCHANGE' ? post.exchangeSkills || [] : [],
       };
 
-      const res = await fetch('http://localhost:8080/api/skills/update', {
+      const res = await fetch(`${BASE_URL}/api/skills/update`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

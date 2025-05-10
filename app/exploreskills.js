@@ -1,14 +1,17 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function ExploreSkillsScreen() {
   const router = useRouter();
@@ -23,17 +26,19 @@ export default function ExploreSkillsScreen() {
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:8080/api/skills/all');
+      const response = await fetch(`${BASE_URL}/api/skills/all`);
       if (response.ok) {
         const data = await response.json();
-        const sortedData = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const sortedData = (data || []).sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
         setSkills(sortedData);
       } else {
-        alert('Failed to load skills');
+        alert('Failed to load skills.');
       }
     } catch (error) {
       console.error('Error fetching skills:', error);
-      alert('Error fetching skills');
+      alert('Error fetching skills.');
     }
     setLoading(false);
   };
@@ -43,6 +48,7 @@ export default function ExploreSkillsScreen() {
   );
 
   const timeAgo = (isoString) => {
+    if (!isoString) return '';
     const now = new Date();
     const postTime = new Date(isoString);
     const diffMinutes = Math.floor((now - postTime) / (1000 * 60));
@@ -81,7 +87,10 @@ export default function ExploreSkillsScreen() {
 
         {item.paymentType === 'EXCHANGE' && item.exchangeSkills && (
           <Text style={styles.extraDetail}>
-            🤝 Exchange for: {Array.isArray(item.exchangeSkills) ? item.exchangeSkills.join(', ') : item.exchangeSkills}
+            🤝 Exchange for:{' '}
+            {Array.isArray(item.exchangeSkills)
+              ? item.exchangeSkills.join(', ')
+              : item.exchangeSkills}
           </Text>
         )}
       </View>
@@ -91,6 +100,11 @@ export default function ExploreSkillsScreen() {
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
       <View style={styles.innerContainer}>
+        {/* Back Button */}
+        <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
+
         <Text style={styles.title}>Explore Skills</Text>
 
         <TextInput
@@ -105,7 +119,7 @@ export default function ExploreSkillsScreen() {
         ) : (
           <FlatList
             data={filteredSkills}
-            keyExtractor={(item, index) => (item?.id || index.toString())}
+            keyExtractor={(item, index) => item?.id || index.toString()}
             renderItem={renderSkillCard}
             contentContainerStyle={styles.listContent}
           />
@@ -123,6 +137,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 60,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 100,
+    padding: 10,
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 32,

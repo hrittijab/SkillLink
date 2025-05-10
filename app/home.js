@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -70,17 +71,11 @@ export default function HomeScreen() {
           Start exploring skills, offer to teach, or connect with others!
         </Text>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          onPress={handleGoToExploreSkills}
-        >
+        <Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} onPress={handleGoToExploreSkills}>
           <Text style={styles.buttonText}>Explore Skills</Text>
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-          onPress={handleAddPost}
-        >
+        <Pressable style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]} onPress={handleAddPost}>
           <Text style={styles.buttonText}>Add a Post</Text>
         </Pressable>
       </View>
@@ -124,7 +119,7 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Account Modal */}
       <Modal visible={showDeleteConfirm} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -141,14 +136,14 @@ export default function HomeScreen() {
               style={styles.modalButton}
               onPress={async () => {
                 const email = await AsyncStorage.getItem('userEmail');
-                const res = await fetch('http://localhost:8080/api/users/verify-password', {
+                const res = await fetch(`${BASE_URL}/api/users/verify-password`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ email, password: deletePassword }),
                 });
 
                 if (res.ok) {
-                  await fetch(`http://localhost:8080/api/users/delete?email=${encodeURIComponent(email)}`, {
+                  await fetch(`${BASE_URL}/api/users/delete?email=${encodeURIComponent(email)}`, {
                     method: 'DELETE',
                   });
                   await AsyncStorage.removeItem('userEmail');
@@ -204,7 +199,7 @@ export default function HomeScreen() {
                   return;
                 }
                 const email = await AsyncStorage.getItem('userEmail');
-                const res = await fetch('http://localhost:8080/api/users/change-password', {
+                const res = await fetch(`${BASE_URL}/api/users/change-password`, {
                   method: 'PUT',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ email, oldPassword, newPassword }),

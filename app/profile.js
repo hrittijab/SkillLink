@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -10,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState(null);
@@ -22,12 +24,18 @@ export default function ProfileScreen() {
         setLoading(true);
         try {
           const email = await AsyncStorage.getItem('userEmail');
-          const response = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(email)}`);
+          if (!email) {
+            alert('User not logged in.');
+            router.push('/login');
+            return;
+          }
+
+          const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`);
           if (response.ok) {
             const data = await response.json();
             setUser(data);
           } else {
-            console.error('Failed to fetch user');
+            console.error('Failed to fetch user profile.');
           }
         } catch (error) {
           console.error('Error fetching user:', error);
@@ -58,6 +66,11 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
+        <Ionicons name="arrow-back" size={28} color="#6D83F2" />
+      </TouchableOpacity>
+
       {user.profilePictureUrl ? (
         <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
       ) : (
@@ -110,6 +123,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f0f4ff',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 10,
+    padding: 10,
   },
   avatar: {
     width: 120,

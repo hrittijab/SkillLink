@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View,
 } from 'react-native';
+import BASE_URL from '../config';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -22,10 +23,10 @@ export default function EditProfileScreen() {
   useEffect(() => {
     const fetchUser = async () => {
       const email = await AsyncStorage.getItem('userEmail');
-      const res = await fetch(`http://localhost:8080/api/users/${encodeURIComponent(email)}`);
+      const res = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`);
       const data = await res.json();
       setUser(data);
-      setEditedUser(data); // editable copy
+      setEditedUser(data);
     };
     fetchUser();
   }, []);
@@ -42,7 +43,7 @@ export default function EditProfileScreen() {
     try {
       const email = await AsyncStorage.getItem('userEmail');
 
-      const verifyRes = await fetch(`http://localhost:8080/api/users/verify-password`, {
+      const verifyRes = await fetch(`${BASE_URL}/api/users/verify-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -53,7 +54,7 @@ export default function EditProfileScreen() {
         return;
       }
 
-      const updateRes = await fetch(`http://localhost:8080/api/users/update`, {
+      const updateRes = await fetch(`${BASE_URL}/api/users/update`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editedUser),
@@ -62,7 +63,7 @@ export default function EditProfileScreen() {
       if (updateRes.ok) {
         Alert.alert('Success', 'Your profile was updated.');
         setShowPasswordModal(false);
-        router.back();
+        router.replace('/profile');
       } else {
         throw new Error('Update failed');
       }
@@ -85,21 +86,21 @@ export default function EditProfileScreen() {
       <Text style={styles.label}>First Name</Text>
       <TextInput
         style={styles.input}
-        value={editedUser.firstName}
+        value={editedUser.firstName || ''}
         onChangeText={(text) => handleFieldChange('firstName', text)}
       />
 
       <Text style={styles.label}>Last Name</Text>
       <TextInput
         style={styles.input}
-        value={editedUser.lastName}
+        value={editedUser.lastName || ''}
         onChangeText={(text) => handleFieldChange('lastName', text)}
       />
 
       <Text style={styles.label}>Bio</Text>
       <TextInput
         style={styles.input}
-        value={editedUser.bio}
+        value={editedUser.bio || ''}
         onChangeText={(text) => handleFieldChange('bio', text)}
         multiline
       />
@@ -107,14 +108,14 @@ export default function EditProfileScreen() {
       <Text style={styles.label}>Skills Offered</Text>
       <TextInput
         style={styles.input}
-        value={editedUser.skillsOffered}
+        value={editedUser.skillsOffered || ''}
         onChangeText={(text) => handleFieldChange('skillsOffered', text)}
       />
 
       <Text style={styles.label}>Skills Wanted</Text>
       <TextInput
         style={styles.input}
-        value={editedUser.skillsWanted}
+        value={editedUser.skillsWanted || ''}
         onChangeText={(text) => handleFieldChange('skillsWanted', text)}
       />
 
@@ -126,7 +127,7 @@ export default function EditProfileScreen() {
         <Text style={styles.backButtonText}>Back to Profile</Text>
       </TouchableOpacity>
 
-      {/* Password Confirmation Modal */}
+      {/* Password Modal */}
       <Modal visible={showPasswordModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>

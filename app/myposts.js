@@ -1,14 +1,16 @@
+import { Ionicons } from '@expo/vector-icons'; // ✅ Add this
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BASE_URL from '../config';
 
@@ -20,13 +22,20 @@ export default function MyPostsScreen() {
   const fetchUserPosts = useCallback(async () => {
     try {
       const email = await AsyncStorage.getItem('userEmail');
-      if (!email) {
+      const token = await SecureStore.getItemAsync('jwtToken');
+
+      if (!email || !token) {
         Alert.alert('Error', 'User not logged in');
         router.replace('/login');
         return;
       }
 
-      const res = await fetch(`${BASE_URL}/api/skills/user?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${BASE_URL}/api/skills/user?email=${encodeURIComponent(email)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       const data = await res.json();
       setPosts(data);
     } catch (err) {
@@ -55,8 +64,12 @@ export default function MyPostsScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
+            const token = await SecureStore.getItemAsync('jwtToken');
             const res = await fetch(`${BASE_URL}/api/skills/delete/${id}`, {
               method: 'DELETE',
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
             });
 
             if (!res.ok) {
@@ -93,6 +106,11 @@ export default function MyPostsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* 🔙 Back Button */}
+      <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
+        <Ionicons name="arrow-back" size={28} color="white" />
+      </TouchableOpacity>
+
       <Text style={styles.header}>Your Posts</Text>
       {posts.length === 0 ? (
         <Text style={styles.empty}>You haven’t posted any skills yet.</Text>
@@ -130,6 +148,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#6D83F2',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 10,
   },
   header: {
     fontSize: 24,

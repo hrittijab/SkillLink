@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
   Modal,
@@ -45,6 +46,7 @@ export default function HomeScreen() {
 
   const handleLogout = async () => {
     try {
+      await SecureStore.deleteItemAsync('jwtToken');
       await AsyncStorage.removeItem('userEmail');
       router.replace('/login');
     } catch (error) {
@@ -55,7 +57,6 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      {/* Avatar */}
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={() => setSettingsVisible(true)}>
           <View style={styles.avatarCircle}>
@@ -64,7 +65,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Main */}
       <View style={styles.innerContainer}>
         <Text style={styles.title}>Welcome to SkillLink! 🎉</Text>
         <Text style={styles.subtitle}>
@@ -136,16 +136,25 @@ export default function HomeScreen() {
               style={styles.modalButton}
               onPress={async () => {
                 const email = await AsyncStorage.getItem('userEmail');
+                const token = await SecureStore.getItemAsync('jwtToken');
+
                 const res = await fetch(`${BASE_URL}/api/users/verify-password`, {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
                   body: JSON.stringify({ email, password: deletePassword }),
                 });
 
                 if (res.ok) {
                   await fetch(`${BASE_URL}/api/users/delete?email=${encodeURIComponent(email)}`, {
                     method: 'DELETE',
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
                   });
+                  await SecureStore.deleteItemAsync('jwtToken');
                   await AsyncStorage.removeItem('userEmail');
                   setShowDeleteConfirm(false);
                   router.replace('/signup');
@@ -198,10 +207,16 @@ export default function HomeScreen() {
                   alert('Passwords do not match!');
                   return;
                 }
+
                 const email = await AsyncStorage.getItem('userEmail');
+                const token = await SecureStore.getItemAsync('jwtToken');
+
                 const res = await fetch(`${BASE_URL}/api/users/change-password`, {
                   method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                  },
                   body: JSON.stringify({ email, oldPassword, newPassword }),
                 });
 
@@ -226,104 +241,21 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  avatarContainer: {
-    position: 'absolute',
-    top: 50,
-    right: 20,
-    zIndex: 1,
-  },
-  avatarCircle: {
-    backgroundColor: '#ffffff30',
-    borderRadius: 30,
-    padding: 5,
-  },
-  innerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: 'white',
-    textAlign: 'center',
-    marginBottom: 40,
-  },
-  button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  buttonText: {
-    color: '#6D83F2',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  buttonPressed: {
-    backgroundColor: '#e0e0e0',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: '#00000099',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '80%',
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  modalButton: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#6D83F2',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-  modalButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    marginTop: 10,
-  },
-  closeButtonText: {
-    color: '#6D83F2',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginVertical: 8,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1 },
+  avatarContainer: { position: 'absolute', top: 50, right: 20, zIndex: 1 },
+  avatarCircle: { backgroundColor: '#ffffff30', borderRadius: 30, padding: 5 },
+  innerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 },
+  title: { fontSize: 36, fontWeight: 'bold', color: 'white', textAlign: 'center', marginBottom: 15 },
+  subtitle: { fontSize: 16, color: 'white', textAlign: 'center', marginBottom: 40 },
+  button: { width: '100%', height: 50, backgroundColor: 'white', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  buttonText: { color: '#6D83F2', fontSize: 18, fontWeight: 'bold' },
+  buttonPressed: { backgroundColor: '#e0e0e0' },
+  modalOverlay: { flex: 1, backgroundColor: '#00000099', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { width: '80%', backgroundColor: 'white', borderRadius: 20, padding: 20, alignItems: 'center' },
+  modalTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  modalButton: { width: '100%', height: 50, backgroundColor: '#6D83F2', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginVertical: 8 },
+  modalButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  closeButton: { marginTop: 10 },
+  closeButtonText: { color: '#6D83F2', fontSize: 16, fontWeight: 'bold' },
+  input: { width: '100%', height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, marginVertical: 8, backgroundColor: '#fff' },
 });

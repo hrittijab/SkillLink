@@ -1,29 +1,33 @@
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import BASE_URL from '../config';
 
 export default function AddPostScreen() {
   const router = useRouter();
-
   const [skillName, setSkillName] = useState('');
   const [preferenceType, setPreferenceType] = useState('TEACH');
   const [paymentType, setPaymentType] = useState('FREE');
   const [price, setPrice] = useState('');
-  const [exchangeSkillInput, setExchangeSkillInput] = useState('');
   const [exchangeSkills, setExchangeSkills] = useState([]);
+  const [exchangeSkillInput, setExchangeSkillInput] = useState('');
 
   const addExchangeSkill = () => {
     const trimmed = exchangeSkillInput.trim();
@@ -41,19 +45,15 @@ export default function AddPostScreen() {
 
     try {
       const userEmail = await AsyncStorage.getItem('userEmail');
-      if (!userEmail) {
+      const token = await SecureStore.getItemAsync('jwtToken');
+
+      if (!userEmail || !token) {
         Alert.alert('Login Required', 'Please log in again.');
         router.push('/login');
         return;
       }
 
-      const payload = {
-        userEmail,
-        skillName,
-        preferenceType,
-        paymentType,
-      };
-
+      const payload = { userEmail, skillName, preferenceType, paymentType };
       if (paymentType === 'PAID') {
         if (!price) {
           Alert.alert('Missing Price', 'Please enter a price.');
@@ -70,120 +70,138 @@ export default function AddPostScreen() {
         payload.exchangeSkills = exchangeSkills;
       }
 
-      const response = await fetch(`${BASE_URL}/api/skills/add`, {
+      const res = await fetch(`${BASE_URL}/api/skills/add`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
+      const result = await res.json();
 
-      if (response.ok) {
+      if (res.ok) {
         Alert.alert('Success', result.message || 'Skill posted!');
-        router.push('/home');
+        router.replace('/home');
       } else {
         Alert.alert('Failed', result.message || 'Something went wrong.');
       }
-    } catch (error) {
-      console.error('Error submitting skill:', error);
+    } catch (err) {
+      console.error('Error submitting skill:', err);
       Alert.alert('Error', 'Could not submit skill.');
     }
   };
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ width: '100%', alignItems: 'center' }}
-      >
-        <Text style={styles.title}>Add a New Skill</Text>
+      <SafeAreaView style={{ flex: 1 }}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
+            {/* 🔙 Back Button */}
+            <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={28} color="white" />
+            </TouchableOpacity>
 
-        <View style={styles.formContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Skill Name"
-            value={skillName}
-            onChangeText={setSkillName}
-          />
+            <Text style={styles.title}>Add New Skill</Text>
 
-          <Text style={styles.label}>Preference Type</Text>
-          <Picker selectedValue={preferenceType} onValueChange={setPreferenceType} style={styles.picker}>
-            <Picker.Item label="Teach" value="TEACH" />
-            <Picker.Item label="Learn" value="LEARN" />
-          </Picker>
+            <View style={styles.form}>
+              <TextInput
+                style={styles.input}
+                placeholder="Skill Name"
+                value={skillName}
+                onChangeText={setSkillName}
+              />
 
-          <Text style={styles.label}>Payment Type</Text>
-          <Picker selectedValue={paymentType} onValueChange={setPaymentType} style={styles.picker}>
-            <Picker.Item label="Free" value="FREE" />
-            <Picker.Item label="Paid" value="PAID" />
-            <Picker.Item label="Exchange" value="EXCHANGE" />
-          </Picker>
+              <Text style={styles.label}>Preference Type</Text>
+              <Picker selectedValue={preferenceType} onValueChange={setPreferenceType} style={styles.picker}>
+                <Picker.Item label="Teach" value="TEACH" />
+                <Picker.Item label="Learn" value="LEARN" />
+              </Picker>
 
-          {paymentType === 'PAID' && (
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Price"
-              keyboardType="numeric"
-              value={price}
-              onChangeText={setPrice}
-            />
-          )}
+              <Text style={styles.label}>Payment Type</Text>
+              <Picker selectedValue={paymentType} onValueChange={setPaymentType} style={styles.picker}>
+                <Picker.Item label="Free" value="FREE" />
+                <Picker.Item label="Paid" value="PAID" />
+                <Picker.Item label="Exchange" value="EXCHANGE" />
+              </Picker>
 
-          {paymentType === 'EXCHANGE' && (
-            <>
-              <Text style={styles.label}>Skills to exchange (one-for-one)</Text>
-              <View style={styles.row}>
+              {paymentType === 'PAID' && (
                 <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  placeholder="e.g. Spanish"
-                  value={exchangeSkillInput}
-                  onChangeText={setExchangeSkillInput}
-                  onSubmitEditing={addExchangeSkill}
+                  style={styles.input}
+                  placeholder="Enter Price"
+                  keyboardType="numeric"
+                  value={price}
+                  onChangeText={setPrice}
                 />
-                <Pressable style={styles.addButton} onPress={addExchangeSkill}>
-                  <Text style={styles.addButtonText}>Add</Text>
-                </Pressable>
-              </View>
-              <View style={styles.tagsContainer}>
-                {exchangeSkills.map((skill, index) => (
-                  <View key={index} style={styles.tag}>
-                    <Text style={styles.tagText}>{skill}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
+              )}
 
-          <Pressable
-            style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
-            onPress={handleSubmit}
-          >
-            <Text style={styles.submitButtonText}>Post Skill</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
+              {paymentType === 'EXCHANGE' && (
+                <>
+                  <Text style={styles.label}>Skills to exchange</Text>
+                  <View style={styles.row}>
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder="e.g. Cooking"
+                      value={exchangeSkillInput}
+                      onChangeText={setExchangeSkillInput}
+                      onSubmitEditing={addExchangeSkill}
+                    />
+                    <Pressable style={styles.addButton} onPress={addExchangeSkill}>
+                      <Text style={styles.addButtonText}>Add</Text>
+                    </Pressable>
+                  </View>
+                  <View style={styles.tagsContainer}>
+                    {exchangeSkills.map((skill, index) => (
+                      <View key={index} style={styles.tag}>
+                        <Text style={styles.tagText}>{skill}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              <Pressable style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]} onPress={handleSubmit}>
+                <Text style={styles.submitButtonText}>Submit</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
   title: {
-    fontSize: 32,
-    color: 'white',
+    fontSize: 28,
     fontWeight: 'bold',
-    marginVertical: 30,
+    color: 'white',
+    marginBottom: 20,
     textAlign: 'center',
   },
-  formContainer: {
-    width: '85%',
+  backButton: {
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    zIndex: 100,
+    padding: 10,
+    backgroundColor: 'transparent',
+  },
+  form: {
     backgroundColor: 'white',
     borderRadius: 20,
     padding: 20,
     elevation: 6,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
   },
   input: {
     height: 50,
@@ -242,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 20,
   },
   submitButtonText: {
     color: 'white',

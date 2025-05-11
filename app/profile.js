@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
 import {
     ActivityIndicator,
@@ -24,13 +25,20 @@ export default function ProfileScreen() {
         setLoading(true);
         try {
           const email = await AsyncStorage.getItem('userEmail');
-          if (!email) {
+          const token = await SecureStore.getItemAsync('jwtToken');
+
+          if (!email || !token) {
             alert('User not logged in.');
             router.push('/login');
             return;
           }
 
-          const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`);
+          const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
           if (response.ok) {
             const data = await response.json();
             setUser(data);

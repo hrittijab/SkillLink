@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -28,14 +29,20 @@ export default function ProfileSetupScreen() {
     const fetchProfile = async () => {
       try {
         const storedEmail = await AsyncStorage.getItem('userEmail');
-        if (!storedEmail) {
+        const token = await SecureStore.getItemAsync('jwtToken');
+
+        if (!storedEmail || !token) {
           alert('No logged-in user found. Please login again.');
           router.push('/login');
           return;
         }
 
         setEmail(storedEmail);
-        const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(storedEmail)}`);
+
+        const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(storedEmail)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         if (response.ok) {
           const userData = await response.json();
 
@@ -70,9 +77,14 @@ export default function ProfileSetupScreen() {
     }
 
     try {
+      const token = await SecureStore.getItemAsync('jwtToken');
+
       const response = await fetch(`${BASE_URL}/api/profile/setup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           email,
           firstName,

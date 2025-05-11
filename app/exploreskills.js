@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -26,7 +27,19 @@ export default function ExploreSkillsScreen() {
   const fetchSkills = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${BASE_URL}/api/skills/all`);
+      const token = await SecureStore.getItemAsync('jwtToken');
+      if (!token) {
+        alert('Please log in again.');
+        router.push('/login');
+        return;
+      }
+
+      const response = await fetch(`${BASE_URL}/api/skills/all`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
       if (response.ok) {
         const data = await response.json();
         const sortedData = (data || []).sort(

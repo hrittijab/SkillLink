@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
   Alert,
@@ -37,16 +38,23 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
+      console.log('🔐 Login Response:', data);
 
-      if (response.ok && data.message === 'Login successful!') {
+      if (response.ok && data.token) {
         await AsyncStorage.setItem('userEmail', normalizedEmail);
+        await SecureStore.setItemAsync('jwtToken', data.token);
+        console.log('✅ JWT saved to SecureStore:', data.token);
+
+        const savedToken = await SecureStore.getItemAsync('jwtToken');
+        console.log('🔁 Retrieved Token:', savedToken);
+
         Alert.alert('Success', 'Welcome back!');
-        router.push('/home');
+        router.replace('/home');
       } else {
         Alert.alert('Login Failed', data.message || 'Invalid credentials.');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ Login error:', error);
       Alert.alert('Error', 'Unable to reach the server. Please try again.');
     }
   };

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import {
     Alert,
@@ -23,7 +24,12 @@ export default function EditProfileScreen() {
   useEffect(() => {
     const fetchUser = async () => {
       const email = await AsyncStorage.getItem('userEmail');
-      const res = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`);
+      const token = await SecureStore.getItemAsync('jwtToken');
+
+      const res = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
       const data = await res.json();
       setUser(data);
       setEditedUser(data);
@@ -42,10 +48,14 @@ export default function EditProfileScreen() {
   const handleVerifyAndSave = async () => {
     try {
       const email = await AsyncStorage.getItem('userEmail');
+      const token = await SecureStore.getItemAsync('jwtToken');
 
       const verifyRes = await fetch(`${BASE_URL}/api/users/verify-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ email, password }),
       });
 
@@ -56,7 +66,10 @@ export default function EditProfileScreen() {
 
       const updateRes = await fetch(`${BASE_URL}/api/users/update`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(editedUser),
       });
 

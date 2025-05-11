@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -59,9 +60,10 @@ export default function SignupScreen() {
 
       const data = await response.json();
 
-      if (response.ok) {
-        await AsyncStorage.setItem('userEmail', email);
-        alert(data.message || 'Signup successful!');
+      if (response.ok && data.token) {
+        await AsyncStorage.setItem('userEmail', email.trim().toLowerCase());
+        await SecureStore.setItemAsync('jwtToken', data.token);
+        alert('Signup successful!');
         router.push('/profile-setup');
       } else {
         alert(`Signup failed: ${data.message || 'Unknown error'}`);
@@ -106,9 +108,11 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Strength bar */}
           <View style={styles.strengthBarContainer}>
-            <View style={[styles.strengthBar, { width: `${(passwordStrength / 5) * 100}%`, backgroundColor: getStrengthColor(passwordStrength) }]} />
+            <View style={[styles.strengthBar, {
+              width: `${(passwordStrength / 5) * 100}%`,
+              backgroundColor: getStrengthColor(passwordStrength)
+            }]} />
           </View>
           <Text style={styles.strengthText}>{getStrengthLabel(passwordStrength)}</Text>
 
@@ -146,11 +150,11 @@ export default function SignupScreen() {
 
 const getStrengthColor = (strength) => {
   switch (strength) {
-    case 5: return '#4caf50'; // strong
-    case 4: return '#8bc34a'; // good
-    case 3: return '#ffc107'; // okay
-    case 2: return '#ff9800'; // weak
-    default: return '#f44336'; // very weak
+    case 5: return '#4caf50';
+    case 4: return '#8bc34a';
+    case 3: return '#ffc107';
+    case 2: return '#ff9800';
+    default: return '#f44336';
   }
 };
 
@@ -165,17 +169,8 @@ const getStrengthLabel = (strength) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 42,
-    color: 'white',
-    fontWeight: 'bold',
-    marginBottom: 30,
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { fontSize: 42, color: 'white', fontWeight: 'bold', marginBottom: 30 },
   formContainer: {
     width: '85%',
     backgroundColor: 'white',
@@ -195,14 +190,8 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingHorizontal: 10,
   },
-  icon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-  },
+  icon: { marginRight: 8 },
+  input: { flex: 1, height: 50, fontSize: 16 },
   strengthBarContainer: {
     height: 8,
     backgroundColor: '#ddd',

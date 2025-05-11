@@ -1,17 +1,20 @@
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BASE_URL from '../config';
 
@@ -24,13 +27,31 @@ export default function EditPostScreen() {
 
   useEffect(() => {
     const fetchPost = async () => {
-      const res = await fetch(`${BASE_URL}/api/skills/all`);
-      const data = await res.json();
-      const targetPost = data.find((p) => p.id === id);
-      setPost(targetPost);
+      try {
+        const res = await fetch(`${BASE_URL}/api/skills/all`);
+        const text = await res.text();
+
+        if (!text) {
+          throw new Error('Empty response from server');
+        }
+
+        const data = JSON.parse(text);
+        const targetPost = data.find((p) => String(p.id) === String(id));
+
+        if (!targetPost) {
+          Alert.alert('Not Found', 'The post could not be found.');
+          router.replace('/myposts');
+          return;
+        }
+
+        setPost(targetPost);
+      } catch (err) {
+        console.error('❌ Failed to fetch post:', err);
+        Alert.alert('Error', 'Could not load the post data.');
+      }
     };
     fetchPost();
-  }, []);
+  }, [id]);
 
   const handleChange = (field, value) => {
     setPost({ ...post, [field]: value });
@@ -47,6 +68,14 @@ export default function EditPostScreen() {
   const handleSubmit = async () => {
     try {
       const userEmail = await AsyncStorage.getItem('userEmail');
+      const token = await SecureStore.getItemAsync('jwtToken');
+
+      if (!userEmail || !token) {
+        Alert.alert('Login Required', 'Please log in again.');
+        router.push('/login');
+        return;
+      }
+
       const payload = {
         ...post,
         userEmail,
@@ -56,7 +85,10 @@ export default function EditPostScreen() {
 
       const res = await fetch(`${BASE_URL}/api/skills/update`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -67,7 +99,7 @@ export default function EditPostScreen() {
         Alert.alert('Failed', 'Could not update post.');
       }
     } catch (err) {
-      console.error(err);
+      console.error('❌ Update failed:', err);
       Alert.alert('Error', 'Update failed.');
     }
   };
@@ -82,7 +114,15 @@ export default function EditPostScreen() {
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', alignItems: 'center' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ width: '100%', alignItems: 'center', flex: 1 }}
+      >
+        {/* 🔙 Back Button */}
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
+
         <Text style={styles.title}>Edit Your Post</Text>
 
         <View style={styles.formContainer}>
@@ -94,13 +134,21 @@ export default function EditPostScreen() {
           />
 
           <Text style={styles.label}>Preference Type</Text>
-          <Picker selectedValue={post.preferenceType} onValueChange={(val) => handleChange('preferenceType', val)} style={styles.picker}>
+          <Picker
+            selectedValue={post.preferenceType}
+            onValueChange={(val) => handleChange('preferenceType', val)}
+            style={styles.picker}
+          >
             <Picker.Item label="Teach" value="TEACH" />
             <Picker.Item label="Learn" value="LEARN" />
           </Picker>
 
           <Text style={styles.label}>Payment Type</Text>
-          <Picker selectedValue={post.paymentType} onValueChange={(val) => handleChange('paymentType', val)} style={styles.picker}>
+          <Picker
+            selectedValue={post.paymentType}
+            onValueChange={(val) => handleChange('paymentType', val)}
+            style={styles.picker}
+          >
             <Picker.Item label="Free" value="FREE" />
             <Picker.Item label="Paid" value="PAID" />
             <Picker.Item label="Exchange" value="EXCHANGE" />
@@ -153,18 +201,93 @@ export default function EditPostScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 32, color: 'white', fontWeight: 'bold', marginVertical: 30, textAlign: 'center' },
-  formContainer: { width: '85%', backgroundColor: 'white', borderRadius: 20, padding: 20, elevation: 6 },
-  input: { height: 50, backgroundColor: '#f5f5f5', borderRadius: 10, paddingHorizontal: 15, fontSize: 16, marginBottom: 15 },
-  label: { fontSize: 16, color: '#555', marginBottom: 5, marginTop: 10 },
-  picker: { height: 50, backgroundColor: '#f5f5f5', borderRadius: 10, marginBottom: 15 },
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  addButton: { backgroundColor: '#6D83F2', paddingHorizontal: 15, paddingVertical: 10, borderRadius: 10, marginLeft: 10 },
-  addButtonText: { color: 'white', fontWeight: 'bold' },
-  tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', marginVertical: 10 },
-  tag: { backgroundColor: '#e0e0e0', borderRadius: 15, paddingHorizontal: 10, paddingVertical: 5, margin: 3 },
-  tagText: { fontSize: 14 },
-  submitButton: { height: 50, backgroundColor: '#6D83F2', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-  submitButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  buttonPressed: { backgroundColor: '#5a6fe0' },
+  backButton: {
+    alignSelf: 'flex-start',
+    marginTop: 40,
+    marginLeft: 20,
+    padding: 6,
+    borderRadius: 8,
+    zIndex: 10,
+  },
+  title: {
+    fontSize: 32,
+    color: 'white',
+    fontWeight: 'bold',
+    marginVertical: 30,
+    textAlign: 'center',
+  },
+  formContainer: {
+    width: '85%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 6,
+  },
+  input: {
+    height: 50,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 5,
+    marginTop: 10,
+  },
+  picker: {
+    height: 50,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  addButton: {
+    backgroundColor: '#6D83F2',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 10,
+    marginLeft: 10,
+  },
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginVertical: 10,
+  },
+  tag: {
+    backgroundColor: '#e0e0e0',
+    borderRadius: 15,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    margin: 3,
+  },
+  tagText: {
+    fontSize: 14,
+  },
+  submitButton: {
+    height: 50,
+    backgroundColor: '#6D83F2',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  buttonPressed: {
+    backgroundColor: '#5a6fe0',
+  },
 });

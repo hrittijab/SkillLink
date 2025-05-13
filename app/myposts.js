@@ -15,11 +15,15 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * MyPostsScreen allows users to view, edit, and delete their own skill posts.
+ */
 export default function MyPostsScreen() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Fetches posts for the currently logged-in user
   const fetchUserPosts = useCallback(async () => {
     try {
       const email = await AsyncStorage.getItem('userEmail');
@@ -32,15 +36,12 @@ export default function MyPostsScreen() {
       }
 
       const res = await fetch(`${BASE_URL}/api/skills/user?email=${encodeURIComponent(email)}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       const data = await res.json();
       setPosts(data);
-    } catch (err) {
-      console.error('Error fetching user posts:', err);
+    } catch {
       Alert.alert('Error', 'Could not load your posts.');
     } finally {
       setLoading(false);
@@ -57,6 +58,7 @@ export default function MyPostsScreen() {
     }, [fetchUserPosts])
   );
 
+  // Handles deletion of a post with confirmation
   const handleDelete = async (id) => {
     Alert.alert('Confirm Delete', 'Are you sure you want to delete this post?', [
       { text: 'Cancel', style: 'cancel' },
@@ -68,9 +70,7 @@ export default function MyPostsScreen() {
             const token = await SecureStore.getItemAsync('jwtToken');
             const res = await fetch(`${BASE_URL}/api/skills/delete/${id}`, {
               method: 'DELETE',
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
+              headers: { Authorization: `Bearer ${token}` },
             });
 
             if (!res.ok) {
@@ -80,8 +80,7 @@ export default function MyPostsScreen() {
             }
 
             setPosts((prev) => prev.filter((post) => post.id !== id));
-          } catch (err) {
-            console.error('Delete error:', err);
+          } catch {
             Alert.alert('Error', 'Failed to delete post.');
           }
         },
@@ -89,11 +88,9 @@ export default function MyPostsScreen() {
     ]);
   };
 
+  // Redirects user to EditPostScreen with post ID
   const handleEdit = (post) => {
-    router.push({
-      pathname: '/editpost',
-      params: { id: post.id },
-    });
+    router.push({ pathname: '/editpost', params: { id: post.id } });
   };
 
   if (loading) {
@@ -107,12 +104,12 @@ export default function MyPostsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* 🔙 Back Button */}
       <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
         <Ionicons name="arrow-back" size={28} color="white" />
       </TouchableOpacity>
 
       <Text style={styles.header}>Your Posts</Text>
+
       {posts.length === 0 ? (
         <Text style={styles.empty}>You haven’t posted any skills yet.</Text>
       ) : (

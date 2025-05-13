@@ -18,6 +18,11 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * ExploreSkillsScreen displays all skill posts shared by users.
+ * Users can filter posts by preference and payment type, search by skill name,
+ * and message or view the profile of other users.
+ */
 export default function ExploreSkillsScreen() {
   const router = useRouter();
   const [skills, setSkills] = useState([]);
@@ -36,6 +41,7 @@ export default function ExploreSkillsScreen() {
     init();
   }, []);
 
+  // Fetch all skills from backend
   const fetchSkills = async () => {
     setLoading(true);
     try {
@@ -51,6 +57,7 @@ export default function ExploreSkillsScreen() {
     setLoading(false);
   };
 
+  // Format post timestamp as relative time
   const timeAgo = (isoString) => {
     const now = new Date();
     const postTime = new Date(isoString);
@@ -62,6 +69,7 @@ export default function ExploreSkillsScreen() {
     return `${Math.floor(hrs / 24)} day(s) ago`;
   };
 
+  // Filter skills by query and dropdown filters
   const filteredSkills = skills.filter((skill) =>
     (skill.skillName || '').toLowerCase().includes(searchQuery.toLowerCase()) &&
     (!preferenceFilter || skill.preferenceType === preferenceFilter) &&
@@ -146,7 +154,6 @@ export default function ExploreSkillsScreen() {
               selectedValue={preferenceFilter}
               onValueChange={(v) => setPreferenceFilter(v)}
               style={styles.picker}
-              itemStyle={{ fontSize: 7 }}
               dropdownIconColor="#6D83F2"
             >
               <Picker.Item label="All Preferences" value="" />
@@ -160,7 +167,6 @@ export default function ExploreSkillsScreen() {
               selectedValue={paymentFilter}
               onValueChange={(v) => setPaymentFilter(v)}
               style={styles.picker}
-              itemStyle={{ fontSize: 7 }}
               dropdownIconColor="#6D83F2"
             >
               <Picker.Item label="All Payments" value="" />
@@ -228,14 +234,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 7,
     overflow: 'hidden',
-    elevation: 0,
     height: 44
   },
   picker: {
     height: 50,
     color: '#333',
-    paddingVertical: -10, // ✅ Remove excess vertical padding
-  marginVertical: -4, 
+    paddingVertical: -10,
+    marginVertical: -4,
   },
   listContent: { paddingBottom: 20 },
   card: {

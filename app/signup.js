@@ -25,8 +25,10 @@ export default function SignupScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
+  // Basic email format validator
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  // Password strength calculator (max 5)
   const calculateStrength = (password) => {
     let strength = 0;
     if (password.length >= 8) strength++;
@@ -42,49 +44,64 @@ export default function SignupScreen() {
     setPasswordStrength(calculateStrength(text));
   };
 
- const handleSignup = async () => {
-  if (!email || !password || !confirmPassword) return alert('Please fill in all fields.');
-  if (!validateEmail(email)) return alert('Invalid email format.');
-  if (password !== confirmPassword) return alert('Passwords do not match!');
-  if (passwordStrength < 5) return alert('Password is too weak.');
-
-  try {
-    const response = await fetch(`${BASE_URL}/api/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: email.trim().toLowerCase(),
-        passwordHash: password,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      await AsyncStorage.setItem('userEmail', email.trim().toLowerCase());
-      if (data.token) {
-        await SecureStore.setItemAsync('jwtToken', data.token);
-        console.log('🔐 JWT Token stored:', data.token);
-      }
-
-      console.log('✅ Signup success. Redirecting...');
-      router.push('/profile-setup');
-    } else {
-      alert(`Signup failed: ${data.message || 'Unknown error'}`);
+  // Handles sign up logic: email format, password match, strength
+  const handleSignup = async () => {
+    if (!email || !password || !confirmPassword) {
+      alert('Please fill in all fields.');
+      return;
     }
-  } catch (error) {
-    console.error('❌ Error during signup:', error);
-    alert('Signup failed. Please check your network or server.');
-  }
-};
 
+    if (!validateEmail(email)) {
+      alert('Invalid email format.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      alert('Passwords do not match!');
+      return;
+    }
+
+    if (passwordStrength < 5) {
+      alert('Password is too weak.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${BASE_URL}/api/signup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          passwordHash: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        await AsyncStorage.setItem('userEmail', email.trim().toLowerCase());
+        if (data.token) {
+          await SecureStore.setItemAsync('jwtToken', data.token);
+        }
+        router.push('/profile-setup');
+      } else {
+        alert(`Signup failed: ${data.message || 'Unknown error'}`);
+      }
+    } catch {
+      alert('Signup failed. Please check your network or server.');
+    }
+  };
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', alignItems: 'center' }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ width: '100%', alignItems: 'center' }}
+      >
         <Text style={styles.title}>SkillLink</Text>
 
         <View style={styles.formContainer}>
+          {/* Email input */}
           <View style={styles.inputContainer}>
             <Ionicons name="mail-outline" size={20} color="#999" style={styles.icon} />
             <TextInput
@@ -98,6 +115,7 @@ export default function SignupScreen() {
             />
           </View>
 
+          {/* Password input */}
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.icon} />
             <TextInput
@@ -113,14 +131,21 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
+          {/* Password strength indicator */}
           <View style={styles.strengthBarContainer}>
-            <View style={[styles.strengthBar, {
-              width: `${(passwordStrength / 5) * 100}%`,
-              backgroundColor: getStrengthColor(passwordStrength)
-            }]} />
+            <View
+              style={[
+                styles.strengthBar,
+                {
+                  width: `${(passwordStrength / 5) * 100}%`,
+                  backgroundColor: getStrengthColor(passwordStrength),
+                },
+              ]}
+            />
           </View>
           <Text style={styles.strengthText}>{getStrengthLabel(passwordStrength)}</Text>
 
+          {/* Confirm Password */}
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color="#999" style={styles.icon} />
             <TextInput
@@ -136,10 +161,15 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
-          <Pressable style={({ pressed }) => [styles.signupButton, pressed && styles.buttonPressed]} onPress={handleSignup}>
+          {/* Submit button */}
+          <Pressable
+            style={({ pressed }) => [styles.signupButton, pressed && styles.buttonPressed]}
+            onPress={handleSignup}
+          >
             <Text style={styles.signupButtonText}>Sign Up</Text>
           </Pressable>
 
+          {/* Login redirect */}
           <Link href="/login" asChild>
             <TouchableOpacity>
               <Text style={styles.loginText}>
@@ -153,17 +183,18 @@ export default function SignupScreen() {
   );
 }
 
-// Utility functions
+// Helper: Color for password strength bar
 const getStrengthColor = (strength) => {
   switch (strength) {
-    case 5: return '#4caf50';
+    case 5: return '#4caf50'; // green
     case 4: return '#8bc34a';
     case 3: return '#ffc107';
     case 2: return '#ff9800';
-    default: return '#f44336';
+    default: return '#f44336'; // red
   }
 };
 
+// Helper: Label for password strength
 const getStrengthLabel = (strength) => {
   switch (strength) {
     case 5: return 'Strong password ✔️';

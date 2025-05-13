@@ -17,6 +17,10 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * LoginScreen allows users to authenticate with email and password.
+ * On success, saves JWT to SecureStore and redirects to home.
+ */
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,23 +42,16 @@ export default function LoginScreen() {
       });
 
       const data = await response.json();
-      console.log('🔐 Login Response:', data);
 
       if (response.ok && data.token) {
         await AsyncStorage.setItem('userEmail', normalizedEmail);
         await SecureStore.setItemAsync('jwtToken', data.token);
-        console.log('✅ JWT saved to SecureStore:', data.token);
-
-        const savedToken = await SecureStore.getItemAsync('jwtToken');
-        console.log('🔁 Retrieved Token:', savedToken);
-
         Alert.alert('Success', 'Welcome back!');
         router.replace('/home');
       } else {
         Alert.alert('Login Failed', data.message || 'Invalid credentials.');
       }
-    } catch (error) {
-      console.error('❌ Login error:', error);
+    } catch {
       Alert.alert('Error', 'Unable to reach the server. Please try again.');
     }
   };
@@ -93,14 +90,18 @@ export default function LoginScreen() {
             />
           </View>
 
-          <Pressable style={({ pressed }) => [styles.loginButton, pressed && styles.buttonPressed]} onPress={handleLogin}>
+          <Pressable
+            style={({ pressed }) => [styles.loginButton, pressed && styles.buttonPressed]}
+            onPress={handleLogin}
+          >
             <Text style={styles.loginButtonText}>Login</Text>
           </Pressable>
 
           <Link href="/signup" asChild>
             <TouchableOpacity>
               <Text style={styles.signupText}>
-                Don&apos;t have an account? <Text style={styles.signupLink}>Sign Up</Text>
+                Don&apos;t have an account?{' '}
+                <Text style={styles.signupLink}>Sign Up</Text>
               </Text>
             </TouchableOpacity>
           </Link>

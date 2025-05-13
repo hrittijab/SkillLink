@@ -20,6 +20,9 @@ import {
 import SockJS from 'sockjs-client';
 import BASE_URL from '../config';
 
+/**
+ * ChatScreen component allows users to send and receive messages, view recipient info, and auto-scroll.
+ */
 export default function ChatScreen() {
   const { email: receiverEmail } = useLocalSearchParams();
   const router = useRouter();
@@ -33,6 +36,7 @@ export default function ChatScreen() {
   const scrollViewRef = useRef(null);
   const stompClientRef = useRef(null);
 
+  // Fetch messages and receiver info
   useEffect(() => {
     const init = async () => {
       const storedEmail = await AsyncStorage.getItem('userEmail');
@@ -50,9 +54,7 @@ export default function ChatScreen() {
         );
         const data = await res.json();
         setMessages(data);
-      } catch {
-        console.warn('❌ Failed to load messages');
-      }
+      } catch {}
 
       try {
         const nameRes = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(receiverEmail)}`, {
@@ -68,7 +70,6 @@ export default function ChatScreen() {
           setReceiverName(receiverEmail);
         }
       } catch {
-        console.warn('❌ Failed to load recipient info');
         setReceiverName(receiverEmail);
       }
     };
@@ -76,6 +77,7 @@ export default function ChatScreen() {
     init();
   }, [receiverEmail]);
 
+  // Setup WebSocket connection for real-time messaging
   useEffect(() => {
     const socket = new SockJS(`${BASE_URL}/chat`);
     const client = new Client({
@@ -108,6 +110,7 @@ export default function ChatScreen() {
     };
   }, [myEmail, receiverEmail]);
 
+  // Handle sending a message
   const handleSend = async () => {
     if (!content.trim()) return;
 
@@ -131,11 +134,9 @@ export default function ChatScreen() {
           destination: '/app/chat.send',
           body: JSON.stringify(message),
         });
-      } else {
-        console.warn('❌ STOMP not connected');
       }
     } catch (err) {
-      console.error('❌ Failed to send message:', err);
+      console.error('Failed to send message:', err);
     }
   };
 

@@ -18,9 +18,15 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * Screen for first-time users to complete their profile
+ * Includes name, bio, skills, and optional profile picture upload
+ */
 export default function ProfileSetupScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+
+  // Form fields
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -29,6 +35,7 @@ export default function ProfileSetupScreen() {
   const [skillsWanted, setSkillsWanted] = useState('');
   const [profilePictureUrl, setProfilePictureUrl] = useState('');
 
+  // Fetch current user's email for profile setup
   useEffect(() => {
     const fetchProfile = async () => {
       const storedEmail = await AsyncStorage.getItem('userEmail');
@@ -44,6 +51,7 @@ export default function ProfileSetupScreen() {
     fetchProfile();
   }, []);
 
+  // Upload selected image to backend (S3 via API)
   const uploadToS3 = async (localUri) => {
     const token = await SecureStore.getItemAsync('jwtToken');
     const formData = new FormData();
@@ -64,35 +72,39 @@ export default function ProfileSetupScreen() {
     });
 
     if (!res.ok) throw new Error('Failed to upload image');
-    return await res.text();
+    return await res.text(); // Returns the S3 URL
   };
 
+  // Pick image from local gallery
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       alert('Permission to access gallery is required!');
       return;
     }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       quality: 1,
     });
+
     if (!result.canceled) {
       try {
         const s3Url = await uploadToS3(result.assets[0].uri);
         setProfilePictureUrl(s3Url);
-      } catch (err) {
-        console.error(err);
+      } catch {
         alert('Image upload failed.');
       }
     }
   };
 
+  // Submit completed profile data
   const handleSaveProfile = async () => {
     if (!firstName || !lastName || !bio) {
       alert('Please fill in all required fields.');
       return;
     }
+
     const token = await SecureStore.getItemAsync('jwtToken');
     const payload = {
       email,
@@ -130,9 +142,14 @@ export default function ProfileSetupScreen() {
   }
 
   return (
-    <LinearGradient colors={["#6D83F2", "#A775F2"]} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ width: '100%', alignItems: 'center' }}>
+    <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ width: '100%', alignItems: 'center' }}
+      >
         <Text style={styles.title}>Complete Your Profile</Text>
+
+        {/* Profile Image Upload */}
         <TouchableOpacity onPress={pickImage}>
           {profilePictureUrl ? (
             <Image source={{ uri: profilePictureUrl }} style={styles.avatar} />
@@ -142,12 +159,30 @@ export default function ProfileSetupScreen() {
             </View>
           )}
         </TouchableOpacity>
+
+        {/* Profile Fields */}
         <View style={styles.formContainer}>
           <TextInput style={styles.input} placeholder="First Name" value={firstName} onChangeText={setFirstName} />
           <TextInput style={styles.input} placeholder="Last Name" value={lastName} onChangeText={setLastName} />
-          <TextInput style={styles.input} placeholder="Short Bio" value={bio} onChangeText={setBio} multiline />
-          <TextInput style={styles.input} placeholder="Skills Offered" value={skillsOffered} onChangeText={setSkillsOffered} />
-          <TextInput style={styles.input} placeholder="Skills Wanted" value={skillsWanted} onChangeText={setSkillsWanted} />
+          <TextInput
+            style={styles.input}
+            placeholder="Short Bio"
+            value={bio}
+            onChangeText={setBio}
+            multiline
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Skills Offered"
+            value={skillsOffered}
+            onChangeText={setSkillsOffered}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Skills Wanted"
+            value={skillsWanted}
+            onChangeText={setSkillsWanted}
+          />
           <Pressable style={styles.saveButton} onPress={handleSaveProfile}>
             <Text style={styles.saveButtonText}>Save Profile</Text>
           </Pressable>

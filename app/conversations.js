@@ -16,12 +16,16 @@ import BASE_URL from '../config';
 
 dayjs.extend(relativeTime);
 
+/**
+ * Show a list of recent chat previews for the logged-in user.
+ */
 export default function ConversationsScreen() {
   const [previews, setPreviews] = useState([]);
   const [myEmail, setMyEmail] = useState('');
   const router = useRouter();
 
   useEffect(() => {
+    // Fetch recent conversation previews from the backend
     const fetchPreviews = async () => {
       const email = await AsyncStorage.getItem('userEmail');
       setMyEmail(email);
@@ -29,8 +33,8 @@ export default function ConversationsScreen() {
         const res = await fetch(`${BASE_URL}/api/messages/previews?email=${email}`);
         const data = await res.json();
         setPreviews(data);
-      } catch (err) {
-        console.error('❌ Failed to fetch previews:', err);
+      } catch {
+        // Fail silently or show toast in production
       }
     };
 
@@ -39,6 +43,7 @@ export default function ConversationsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#6D83F2" />
@@ -46,6 +51,7 @@ export default function ConversationsScreen() {
         <Text style={styles.title}>Chats</Text>
       </View>
 
+      {/* Message Previews */}
       {previews.length === 0 ? (
         <Text style={styles.noChats}>No conversations yet.</Text>
       ) : (
@@ -68,6 +74,7 @@ export default function ConversationsScreen() {
               }
             >
               <View style={styles.row}>
+                {/* Avatar or Initials */}
                 <TouchableOpacity
                   onPress={() =>
                     router.push({
@@ -88,6 +95,7 @@ export default function ConversationsScreen() {
                   )}
                 </TouchableOpacity>
 
+                {/* Name, Last Message, Timestamp */}
                 <View style={styles.textContainer}>
                   <View style={styles.rowSpaceBetween}>
                     <Text style={styles.name}>{item.otherUserName}</Text>

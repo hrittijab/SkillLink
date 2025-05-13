@@ -14,6 +14,10 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * Displays the public profile of another user, including their profile picture, name, bio,
+ * and listed skills.
+ */
 export default function OtherProfileScreen() {
   const { email } = useLocalSearchParams();
   const router = useRouter();
@@ -41,9 +45,8 @@ export default function OtherProfileScreen() {
         } else {
           alert('Failed to load user profile.');
         }
-      } catch (err) {
-        console.error('Error:', err);
-        alert('Something went wrong.');
+      } catch {
+        alert('Something went wrong. Please try again.');
       } finally {
         setLoading(false);
       }
@@ -71,10 +74,12 @@ export default function OtherProfileScreen() {
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.gradient}>
       <ScrollView contentContainerStyle={styles.container}>
+        {/* 🔙 Back Button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
 
+        {/* 👤 User Profile Info */}
         <View style={styles.profileCard}>
           {user.profilePictureUrl ? (
             <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
@@ -86,6 +91,7 @@ export default function OtherProfileScreen() {
           <Text style={styles.name}>{user.firstName} {user.lastName}</Text>
         </View>
 
+        {/* 📝 Bio and Skills */}
         {user.bio && (
           <View style={styles.infoCard}>
             <Text style={styles.label}>Bio</Text>

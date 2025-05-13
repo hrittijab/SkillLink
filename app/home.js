@@ -27,6 +27,37 @@ export default function HomeScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const email = await AsyncStorage.getItem('userEmail');
+        const token = await SecureStore.getItemAsync('jwtToken');
+        if (!email || !token) return;
+
+        const res = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+        }
+      } catch {}
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await SecureStore.deleteItemAsync('jwtToken');
+      await AsyncStorage.removeItem('userEmail');
+      router.replace('/login');
+    } catch {
+      alert('Logout failed. Please try again.');
+    }
+  };
+
   const handleGoToExploreSkills = () => router.push('/exploreskills');
   const handleAddPost = () => router.push('/addpost');
 
@@ -45,43 +76,8 @@ export default function HomeScreen() {
     setTimeout(() => setShowDeleteConfirm(true), 100);
   };
 
-  const handleLogout = async () => {
-    try {
-      await SecureStore.deleteItemAsync('jwtToken');
-      await AsyncStorage.removeItem('userEmail');
-      router.replace('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      alert('Logout failed. Please try again.');
-    }
-  };
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const email = await AsyncStorage.getItem('userEmail');
-        const token = await SecureStore.getItemAsync('jwtToken');
-        if (!email || !token) return;
-
-        const res = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data);
-        }
-      } catch (err) {
-        console.error('Failed to load user:', err);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      {/* Top-right profile picture */}
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={() => setSettingsVisible(true)}>
           {user?.profilePictureUrl ? (
@@ -94,7 +90,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Top-left Messages Icon */}
       <View style={styles.messagesIconContainer}>
         <TouchableOpacity onPress={() => router.push('/conversations')}>
           <Ionicons name="chatbubble-ellipses-outline" size={32} color="white" />
@@ -102,7 +97,7 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.innerContainer}>
-        <Text style={styles.title}>Welcome to SkillLink! 🎉</Text>
+        <Text style={styles.title}>Welcome to SkillLink!</Text>
         <Text style={styles.subtitle}>
           Start exploring skills, offer to teach, or connect with others!
         </Text>
@@ -116,7 +111,6 @@ export default function HomeScreen() {
         </Pressable>
       </View>
 
-      {/* Settings Modal */}
       <Modal visible={settingsVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -155,7 +149,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Delete Account Modal */}
       <Modal visible={showDeleteConfirm} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -186,9 +179,7 @@ export default function HomeScreen() {
                 if (res.ok) {
                   await fetch(`${BASE_URL}/api/users/delete?email=${encodeURIComponent(email)}`, {
                     method: 'DELETE',
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                   });
                   await SecureStore.deleteItemAsync('jwtToken');
                   await AsyncStorage.removeItem('userEmail');
@@ -208,7 +199,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Change Password Modal */}
       <Modal visible={showChangePassword} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -277,9 +267,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   avatarContainer: {
     position: 'absolute',
     top: 45,
@@ -400,4 +388,3 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
 });
-

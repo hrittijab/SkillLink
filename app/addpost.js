@@ -29,6 +29,7 @@ export default function AddPostScreen() {
   const [exchangeSkills, setExchangeSkills] = useState([]);
   const [exchangeSkillInput, setExchangeSkillInput] = useState('');
 
+  // Add new skill to exchange list
   const addExchangeSkill = () => {
     const trimmed = exchangeSkillInput.trim();
     if (trimmed && !exchangeSkills.includes(trimmed)) {
@@ -37,6 +38,7 @@ export default function AddPostScreen() {
     }
   };
 
+  // Submit the skill post
   const handleSubmit = async () => {
     if (!skillName) {
       Alert.alert('Missing Field', 'Please enter a skill name.');
@@ -54,6 +56,7 @@ export default function AddPostScreen() {
       }
 
       const payload = { userEmail, skillName, preferenceType, paymentType };
+
       if (paymentType === 'PAID') {
         if (!price) {
           Alert.alert('Missing Price', 'Please enter a price.');
@@ -87,8 +90,7 @@ export default function AddPostScreen() {
       } else {
         Alert.alert('Failed', result.message || 'Something went wrong.');
       }
-    } catch (err) {
-      console.error('Error submitting skill:', err);
+    } catch {
       Alert.alert('Error', 'Could not submit skill.');
     }
   };
@@ -101,7 +103,7 @@ export default function AddPostScreen() {
           style={{ flex: 1 }}
         >
           <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-            {/* 🔙 Back Button */}
+            {/* Back button */}
             <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
               <Ionicons name="arrow-back" size={28} color="white" />
             </TouchableOpacity>

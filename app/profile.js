@@ -19,11 +19,15 @@ import BASE_URL from '../config';
 
 const { width } = Dimensions.get('window');
 
+/**
+ * Profile screen for displaying the logged-in user's data.
+ */
 export default function ProfileScreen() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Load user data on screen focus
   useFocusEffect(
     useCallback(() => {
       const fetchUser = async () => {
@@ -47,11 +51,9 @@ export default function ProfileScreen() {
           if (response.ok) {
             const data = await response.json();
             setUser(data);
-          } else {
-            console.error('Failed to fetch user profile.');
           }
-        } catch (error) {
-          console.error('Error fetching user:', error);
+        } catch {
+          alert('Failed to load profile. Please try again.');
         } finally {
           setLoading(false);
         }
@@ -80,10 +82,12 @@ export default function ProfileScreen() {
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.gradient}>
       <ScrollView contentContainerStyle={styles.container}>
+        {/* 🔙 Back to Home */}
         <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
 
+        {/* 👤 User Avatar */}
         <View style={styles.profileCard}>
           {user.profilePictureUrl ? (
             <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
@@ -99,6 +103,7 @@ export default function ProfileScreen() {
           <Text style={styles.email}>{user.email}</Text>
         </View>
 
+        {/* Profile Info */}
         {user.bio && (
           <View style={styles.infoCard}>
             <Text style={styles.label}>Bio</Text>
@@ -118,6 +123,7 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* ✏️ Edit Profile Button */}
         <TouchableOpacity style={styles.editButton} onPress={() => router.push('/editprofile')}>
           <Text style={styles.editButtonText}>Edit Profile</Text>
         </TouchableOpacity>

@@ -16,6 +16,11 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * EditProfileScreen allows users to update their personal profile,
+ * including bio, skills, and profile picture. It requires password
+ * confirmation before saving changes.
+ */
 export default function EditProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -71,20 +76,21 @@ export default function EditProfileScreen() {
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      alert('Permission to access gallery is required!');
+      Alert.alert('Permission Needed', 'Gallery access is required.');
       return;
     }
+
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       quality: 1,
     });
+
     if (!result.canceled) {
       try {
         const s3Url = await uploadToS3(result.assets[0].uri);
         handleFieldChange('profilePictureUrl', s3Url);
-      } catch (err) {
-        console.error(err);
-        alert('Image upload failed.');
+      } catch {
+        Alert.alert('Error', 'Image upload failed.');
       }
     }
   };
@@ -108,7 +114,7 @@ export default function EditProfileScreen() {
       });
 
       if (!verifyRes.ok) {
-        Alert.alert('Incorrect Password', 'Please enter the correct password to save changes.');
+        Alert.alert('Incorrect Password', 'Please try again.');
         return;
       }
 
@@ -122,15 +128,14 @@ export default function EditProfileScreen() {
       });
 
       if (updateRes.ok) {
-        Alert.alert('Success', 'Your profile was updated.');
+        Alert.alert('Success', 'Profile updated successfully.');
         setShowPasswordModal(false);
         router.replace('/profile');
       } else {
-        throw new Error('Update failed');
+        throw new Error();
       }
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Could not update your profile.');
+    } catch {
+      Alert.alert('Error', 'Could not update profile.');
     }
   };
 
@@ -205,6 +210,7 @@ export default function EditProfileScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Password Confirmation Modal */}
       <Modal visible={showPasswordModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>

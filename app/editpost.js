@@ -18,6 +18,10 @@ import {
 } from 'react-native';
 import BASE_URL from '../config';
 
+/**
+ * EditPostScreen allows users to update an existing skill post.
+ * It handles loading post data, modifying fields, and submitting changes.
+ */
 export default function EditPostScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -30,23 +34,17 @@ export default function EditPostScreen() {
       try {
         const res = await fetch(`${BASE_URL}/api/skills/all`);
         const text = await res.text();
-
-        if (!text) {
-          throw new Error('Empty response from server');
-        }
+        if (!text) throw new Error();
 
         const data = JSON.parse(text);
         const targetPost = data.find((p) => String(p.id) === String(id));
-
         if (!targetPost) {
           Alert.alert('Not Found', 'The post could not be found.');
           router.replace('/myposts');
           return;
         }
-
         setPost(targetPost);
-      } catch (err) {
-        console.error('❌ Failed to fetch post:', err);
+      } catch {
         Alert.alert('Error', 'Could not load the post data.');
       }
     };
@@ -69,7 +67,6 @@ export default function EditPostScreen() {
     try {
       const userEmail = await AsyncStorage.getItem('userEmail');
       const token = await SecureStore.getItemAsync('jwtToken');
-
       if (!userEmail || !token) {
         Alert.alert('Login Required', 'Please log in again.');
         router.push('/login');
@@ -98,8 +95,7 @@ export default function EditPostScreen() {
       } else {
         Alert.alert('Failed', 'Could not update post.');
       }
-    } catch (err) {
-      console.error('❌ Update failed:', err);
+    } catch {
       Alert.alert('Error', 'Update failed.');
     }
   };
@@ -118,13 +114,14 @@ export default function EditPostScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ width: '100%', alignItems: 'center', flex: 1 }}
       >
-        {/* 🔙 Back Button */}
+        {/* Back Button */}
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
 
         <Text style={styles.title}>Edit Your Post</Text>
 
+        {/* Form Section */}
         <View style={styles.formContainer}>
           <TextInput
             style={styles.input}
@@ -154,6 +151,7 @@ export default function EditPostScreen() {
             <Picker.Item label="Exchange" value="EXCHANGE" />
           </Picker>
 
+          {/* Conditionally show price input */}
           {post.paymentType === 'PAID' && (
             <TextInput
               style={styles.input}
@@ -164,6 +162,7 @@ export default function EditPostScreen() {
             />
           )}
 
+          {/* Conditionally show exchange skills input */}
           {post.paymentType === 'EXCHANGE' && (
             <>
               <Text style={styles.label}>Skills to exchange</Text>
@@ -189,7 +188,11 @@ export default function EditPostScreen() {
             </>
           )}
 
-          <Pressable style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]} onPress={handleSubmit}>
+          {/* Submit Button */}
+          <Pressable
+            style={({ pressed }) => [styles.submitButton, pressed && styles.buttonPressed]}
+            onPress={handleSubmit}
+          >
             <Text style={styles.submitButtonText}>Save Changes</Text>
           </Pressable>
         </View>

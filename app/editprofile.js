@@ -1,16 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import BASE_URL from '../config';
 
@@ -39,6 +41,52 @@ export default function EditProfileScreen() {
 
   const handleFieldChange = (key, value) => {
     setEditedUser({ ...editedUser, [key]: value });
+  };
+
+  const uploadToS3 = async (localUri) => {
+    const email = await AsyncStorage.getItem('userEmail');
+    const token = await SecureStore.getItemAsync('jwtToken');
+    const formData = new FormData();
+
+    formData.append('email', email);
+    formData.append('file', {
+      uri: localUri,
+      name: 'profile.jpg',
+      type: 'image/jpeg',
+    });
+
+    const res = await fetch(`${BASE_URL}/api/users/upload-profile-picture`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error('Failed to upload image');
+    return await res.text();
+  };
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      alert('Permission to access gallery is required!');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled) {
+      try {
+        const s3Url = await uploadToS3(result.assets[0].uri);
+        handleFieldChange('profilePictureUrl', s3Url);
+      } catch (err) {
+        console.error(err);
+        alert('Image upload failed.');
+      }
+    }
   };
 
   const handleSaveClick = () => {
@@ -96,6 +144,14 @@ export default function EditProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
+      <TouchableOpacity onPress={pickImage}>
+        {editedUser.profilePictureUrl ? (
+          <Image source={{ uri: editedUser.profilePictureUrl }} style={styles.avatar} />
+        ) : (
+          <Text style={styles.uploadText}>Upload Profile Picture</Text>
+        )}
+      </TouchableOpacity>
+
       <Text style={styles.label}>First Name</Text>
       <TextInput
         style={styles.input}
@@ -140,15 +196,13 @@ export default function EditProfileScreen() {
         <Text style={styles.backButtonText}>Back to Profile</Text>
       </TouchableOpacity>
 
-      {/* Password Modal */}
       <Modal visible={showPasswordModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Confirm Changes</Text>
-            <Text>Enter your password to confirm changes:</Text>
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Enter password"
               secureTextEntry
               value={password}
               onChangeText={setPassword}
@@ -167,20 +221,9 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#F9F9FF',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 10,
-  },
+  container: { padding: 20, backgroundColor: '#F9F9FF' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  label: { fontSize: 16, fontWeight: '600', marginTop: 10 },
   input: {
     backgroundColor: 'white',
     padding: 10,
@@ -236,5 +279,20 @@ const styles = StyleSheet.create({
     color: '#6D83F2',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+    alignSelf: 'center',
+    borderColor: '#6D83F2',
+    borderWidth: 2,
+  },
+  uploadText: {
+    textAlign: 'center',
+    color: '#6D83F2',
+    fontWeight: 'bold',
+    marginVertical: 12,
   },
 });

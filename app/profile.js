@@ -4,15 +4,19 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useCallback, useState } from 'react';
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import BASE_URL from '../config';
+
+const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
   const [user, setUser] = useState(null);
@@ -74,44 +78,45 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
         <Ionicons name="arrow-back" size={28} color="#6D83F2" />
       </TouchableOpacity>
 
-      {user.profilePictureUrl ? (
-        <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
-      ) : (
-        <View style={styles.initialAvatar}>
-          <Text style={styles.initialText}>
-            {user.firstName?.charAt(0)?.toUpperCase() ?? "?"}
-          </Text>
-        </View>
-      )}
+      <View style={{ alignItems: 'center' }}>
+        {user.profilePictureUrl ? (
+          <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
+        ) : (
+          <View style={styles.initialAvatar}>
+            <Text style={styles.initialText}>
+              {user.firstName?.charAt(0)?.toUpperCase() ?? "?"}
+            </Text>
+          </View>
+        )}
+      </View>
 
       <Text style={styles.name}>{user.firstName} {user.lastName}</Text>
       <Text style={styles.email}>{user.email}</Text>
 
-      {user.bio ? (
+      {user.bio && (
         <>
           <Text style={styles.label}>Bio</Text>
           <Text style={styles.info}>{user.bio}</Text>
         </>
-      ) : null}
+      )}
 
-      {user.skillsOffered ? (
+      {user.skillsOffered && (
         <>
           <Text style={styles.label}>Skills Offered</Text>
           <Text style={styles.info}>{user.skillsOffered}</Text>
         </>
-      ) : null}
+      )}
 
-      {user.skillsWanted ? (
+      {user.skillsWanted && (
         <>
           <Text style={styles.label}>Skills Wanted</Text>
           <Text style={styles.info}>{user.skillsWanted}</Text>
         </>
-      ) : null}
+      )}
 
       <TouchableOpacity style={styles.editButton} onPress={() => router.push('/editprofile')}>
         <Text style={styles.editButtonText}>Edit Profile</Text>
@@ -123,7 +128,9 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: Platform.OS === 'android' ? 40 : 60,
+    paddingBottom: 40,
     backgroundColor: '#f0f4ff',
   },
   centered: {
@@ -134,65 +141,63 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 20,
-    left: 20,
-    zIndex: 10,
+    top: Platform.OS === 'android' ? 20 : 50,
+    left: 16,
     padding: 10,
+    zIndex: 1,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 20,
+    width: width * 0.35,
+    height: width * 0.35,
+    borderRadius: (width * 0.35) / 2,
+    marginBottom: 10,
     borderWidth: 2,
     borderColor: '#6D83F2',
   },
   initialAvatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: width * 0.35,
+    height: width * 0.35,
+    borderRadius: (width * 0.35) / 2,
     backgroundColor: '#6D83F2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 5,
+    marginBottom: 10,
+    elevation: 4,
   },
   initialText: {
-    fontSize: 48,
+    fontSize: width * 0.15,
     color: 'white',
     fontWeight: 'bold',
   },
   name: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 4,
+    textAlign: 'center',
   },
   email: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#666',
     marginBottom: 20,
+    textAlign: 'center',
   },
   label: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#444',
     alignSelf: 'flex-start',
     marginTop: 12,
   },
   info: {
-    fontSize: 16,
+    fontSize: 14,
     backgroundColor: '#fff',
-    padding: 10,
+    padding: 12,
     width: '100%',
-    borderRadius: 8,
-    borderColor: '#ddd',
+    borderRadius: 10,
+    borderColor: '#ccc',
     borderWidth: 1,
-    marginBottom: 8,
+    marginBottom: 10,
     color: '#333',
   },
   editButton: {
@@ -201,15 +206,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 40,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 3,
     elevation: 3,
   },
   editButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });

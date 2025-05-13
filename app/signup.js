@@ -42,37 +42,42 @@ export default function SignupScreen() {
     setPasswordStrength(calculateStrength(text));
   };
 
-  const handleSignup = async () => {
-    if (!email || !password || !confirmPassword) return alert('Please fill in all fields.');
-    if (!validateEmail(email)) return alert('Invalid email format.');
-    if (password !== confirmPassword) return alert('Passwords do not match!');
-    if (passwordStrength < 5) return alert('Password is too weak.');
+ const handleSignup = async () => {
+  if (!email || !password || !confirmPassword) return alert('Please fill in all fields.');
+  if (!validateEmail(email)) return alert('Invalid email format.');
+  if (password !== confirmPassword) return alert('Passwords do not match!');
+  if (passwordStrength < 5) return alert('Password is too weak.');
 
-    try {
-      const response = await fetch(`${BASE_URL}/api/signup`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          passwordHash: password,
-        }),
-      });
+  try {
+    const response = await fetch(`${BASE_URL}/api/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        passwordHash: password,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok && data.token) {
-        await AsyncStorage.setItem('userEmail', email.trim().toLowerCase());
+    if (response.ok) {
+      await AsyncStorage.setItem('userEmail', email.trim().toLowerCase());
+      if (data.token) {
         await SecureStore.setItemAsync('jwtToken', data.token);
-        alert('Signup successful!');
-        router.push('/profile-setup');
-      } else {
-        alert(`Signup failed: ${data.message || 'Unknown error'}`);
+        console.log('🔐 JWT Token stored:', data.token);
       }
-    } catch (error) {
-      console.error('Error during signup:', error);
-      alert('Signup failed. Please check your network or server.');
+
+      console.log('✅ Signup success. Redirecting...');
+      router.push('/profile-setup');
+    } else {
+      alert(`Signup failed: ${data.message || 'Unknown error'}`);
     }
-  };
+  } catch (error) {
+    console.error('❌ Error during signup:', error);
+    alert('Signup failed. Please check your network or server.');
+  }
+};
+
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
@@ -148,6 +153,7 @@ export default function SignupScreen() {
   );
 }
 
+// Utility functions
 const getStrengthColor = (strength) => {
   switch (strength) {
     case 5: return '#4caf50';
@@ -168,6 +174,7 @@ const getStrengthLabel = (strength) => {
   }
 };
 
+// Styles
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   title: { fontSize: 42, color: 'white', fontWeight: 'bold', marginBottom: 30 },

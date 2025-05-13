@@ -35,6 +35,9 @@ export default function RootLayout() {
         <Stack.Screen name="editprofile" />
         <Stack.Screen name="exploreskills" />
         <Stack.Screen name="profile" />
+        <Stack.Screen name="chatscreen" />
+        <Stack.Screen name="conversations" />
+
 
         {/* Fallback */}
         <Stack.Screen name="+not-found" />

@@ -57,11 +57,19 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
+      {/* Top-right Avatar */}
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={() => setSettingsVisible(true)}>
           <View style={styles.avatarCircle}>
             <Ionicons name="person-circle-outline" size={40} color="white" />
           </View>
+        </TouchableOpacity>
+      </View>
+
+      {/* Top-left Messages Icon */}
+      <View style={styles.messagesIconContainer}>
+        <TouchableOpacity onPress={() => router.push('/conversations')}>
+          <Ionicons name="chatbubble-ellipses-outline" size={32} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -244,18 +252,83 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   avatarContainer: { position: 'absolute', top: 50, right: 20, zIndex: 1 },
   avatarCircle: { backgroundColor: '#ffffff30', borderRadius: 30, padding: 5 },
-  innerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 },
-  title: { fontSize: 36, fontWeight: 'bold', color: 'white', textAlign: 'center', marginBottom: 15 },
-  subtitle: { fontSize: 16, color: 'white', textAlign: 'center', marginBottom: 40 },
-  button: { width: '100%', height: 50, backgroundColor: 'white', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
-  buttonText: { color: '#6D83F2', fontSize: 18, fontWeight: 'bold' },
+  messagesIconContainer: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1,
+    backgroundColor: '#ffffff30',
+    borderRadius: 30,
+    padding: 5,
+  },
+  innerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  title: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: 40,
+  },
+  button: {
+    width: '100%',
+    height: 50,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  buttonText: {
+    color: '#6D83F2',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
   buttonPressed: { backgroundColor: '#e0e0e0' },
-  modalOverlay: { flex: 1, backgroundColor: '#00000099', justifyContent: 'center', alignItems: 'center' },
-  modalContainer: { width: '80%', backgroundColor: 'white', borderRadius: 20, padding: 20, alignItems: 'center' },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#00000099',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+  },
   modalTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  modalButton: { width: '100%', height: 50, backgroundColor: '#6D83F2', borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginVertical: 8 },
+  modalButton: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#6D83F2',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
   modalButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
   closeButton: { marginTop: 10 },
   closeButtonText: { color: '#6D83F2', fontSize: 16, fontWeight: 'bold' },
-  input: { width: '100%', height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, marginVertical: 8, backgroundColor: '#fff' },
+  input: {
+    width: '100%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginVertical: 8,
+    backgroundColor: '#fff',
+  },
 });

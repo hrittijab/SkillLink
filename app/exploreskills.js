@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -19,9 +20,15 @@ export default function ExploreSkillsScreen() {
   const [skills, setSkills] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [myEmail, setMyEmail] = useState('');
 
   useEffect(() => {
-    fetchSkills();
+    const init = async () => {
+      const email = await AsyncStorage.getItem('userEmail');
+      if (email) setMyEmail(email);
+      fetchSkills();
+    };
+    init();
   }, []);
 
   const fetchSkills = async () => {
@@ -77,6 +84,9 @@ export default function ExploreSkillsScreen() {
   const renderSkillCard = ({ item }) => {
     if (!item) return null;
 
+    const isOwnPost = item.userEmail?.toLowerCase() === myEmail.toLowerCase();
+    const isActive = !item.status || item.status.toUpperCase() === 'ACTIVE';
+
     return (
       <View style={styles.card}>
         <Text style={styles.posterName}>
@@ -106,6 +116,26 @@ export default function ExploreSkillsScreen() {
               : item.exchangeSkills}
           </Text>
         )}
+
+        {!isOwnPost && (
+          isActive ? (
+            <TouchableOpacity
+              style={styles.messageButton}
+              onPress={() =>
+                router.push({
+                  pathname: '/chatscreen',
+                  params: { email: item.userEmail },
+                })
+              }
+            >
+              <Text style={styles.messageButtonText}>Message</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.disabledButton}>
+              <Text style={styles.disabledButtonText}>Post Closed</Text>
+            </View>
+          )
+        )}
       </View>
     );
   };
@@ -113,7 +143,6 @@ export default function ExploreSkillsScreen() {
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
       <View style={styles.innerContainer}>
-        {/* Back Button */}
         <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
@@ -143,9 +172,7 @@ export default function ExploreSkillsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   innerContainer: {
     flex: 1,
     paddingHorizontal: 20,
@@ -157,7 +184,6 @@ const styles = StyleSheet.create({
     left: 20,
     zIndex: 100,
     padding: 10,
-    backgroundColor: 'transparent',
   },
   title: {
     fontSize: 32,
@@ -174,9 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 16,
   },
-  listContent: {
-    paddingBottom: 20,
-  },
+  listContent: { paddingBottom: 20 },
   card: {
     backgroundColor: 'white',
     borderRadius: 15,
@@ -187,31 +211,27 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
-  posterName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-    marginBottom: 2,
+  posterName: { fontSize: 16, fontWeight: '600', color: '#222', marginBottom: 2 },
+  timeStamp: { fontSize: 12, color: '#777', marginBottom: 5 },
+  skillTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 5, color: '#333' },
+  detailsText: { fontSize: 14, marginBottom: 4, color: '#444' },
+  extraDetail: { fontSize: 14, color: '#555', marginTop: 2 },
+  messageButton: {
+    backgroundColor: '#6D83F2',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginTop: 10,
   },
-  timeStamp: {
-    fontSize: 12,
-    color: '#777',
-    marginBottom: 5,
+  messageButtonText: { color: 'white', fontWeight: '600', fontSize: 14 },
+  disabledButton: {
+    backgroundColor: '#ccc',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginTop: 10,
   },
-  skillTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
-  },
-  detailsText: {
-    fontSize: 14,
-    marginBottom: 4,
-    color: '#444',
-  },
-  extraDetail: {
-    fontSize: 14,
-    color: '#555',
-    marginTop: 2,
-  },
+  disabledButtonText: { color: '#666', fontWeight: '600', fontSize: 14 },
 });

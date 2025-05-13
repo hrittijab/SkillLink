@@ -31,6 +31,9 @@ export default function ProfileSetupScreen() {
         const storedEmail = await AsyncStorage.getItem('userEmail');
         const token = await SecureStore.getItemAsync('jwtToken');
 
+        console.log('🔑 Stored Email:', storedEmail);
+        console.log('🔐 JWT Token:', token);
+
         if (!storedEmail || !token) {
           alert('No logged-in user found. Please login again.');
           router.push('/login');
@@ -43,13 +46,26 @@ export default function ProfileSetupScreen() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        console.log('📡 API Response Status:', response.status);
+
         if (response.ok) {
           const userData = await response.json();
+          console.log('📦 Fetched user profile:', userData);
 
-          if (userData.firstName && userData.lastName && userData.bio) {
+          const shouldRedirect =
+            userData.firstName?.trim() &&
+            userData.lastName?.trim() &&
+            userData.bio?.trim();
+
+          console.log('🔁 Should redirect to home?', shouldRedirect);
+
+          if (shouldRedirect) {
+            console.log('✅ Redirecting to /home...');
             router.push('/home');
             return;
           }
+
+          console.log('📝 Staying on profile setup screen.');
 
           setFirstName(userData.firstName || '');
           setLastName(userData.lastName || '');
@@ -57,10 +73,12 @@ export default function ProfileSetupScreen() {
           setSkillsOffered(userData.skillsOffered || '');
           setSkillsWanted(userData.skillsWanted || '');
         } else {
+          const errorText = await response.text();
+          console.error('❌ Failed to fetch profile:', errorText);
           alert('Failed to fetch profile.');
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('❌ Error fetching profile:', error);
         alert('Could not fetch user profile.');
       } finally {
         setLoading(false);
@@ -72,7 +90,7 @@ export default function ProfileSetupScreen() {
 
   const handleSaveProfile = async () => {
     if (!firstName || !lastName || !bio) {
-      alert('Please fill in all fields.');
+      alert('Please fill in all required fields.');
       return;
     }
 

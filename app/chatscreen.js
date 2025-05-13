@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
     ActivityIndicator,
     Button,
+    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -27,6 +28,7 @@ export default function ChatScreen() {
   const [myEmail, setMyEmail] = useState('');
   const [content, setContent] = useState('');
   const [receiverName, setReceiverName] = useState('');
+  const [receiverPic, setReceiverPic] = useState('');
   const [stompConnected, setStompConnected] = useState(false);
   const scrollViewRef = useRef(null);
   const stompClientRef = useRef(null);
@@ -43,9 +45,7 @@ export default function ChatScreen() {
         const res = await fetch(
           `${BASE_URL}/api/messages/conversation?user1=${storedEmail}&user2=${receiverEmail}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
         const data = await res.json();
@@ -56,15 +56,14 @@ export default function ChatScreen() {
 
       try {
         const nameRes = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(receiverEmail)}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (nameRes.ok) {
           const user = await nameRes.json();
           const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
           setReceiverName(fullName || receiverEmail);
+          setReceiverPic(user.profilePictureUrl || '');
         } else {
           setReceiverName(receiverEmail);
         }
@@ -83,9 +82,7 @@ export default function ChatScreen() {
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        console.log('✅ STOMP connected');
         setStompConnected(true);
-
         client.subscribe('/topic/messages', (message) => {
           const body = JSON.parse(message.body);
           const isChatMessage =
@@ -120,7 +117,7 @@ export default function ChatScreen() {
       content,
     };
 
-    setContent(''); // Clear input immediately
+    setContent('');
 
     try {
       await fetch(`${BASE_URL}/api/messages/send`, {
@@ -135,7 +132,7 @@ export default function ChatScreen() {
           body: JSON.stringify(message),
         });
       } else {
-        console.warn('❌ STOMP not connected, cannot publish');
+        console.warn('❌ STOMP not connected');
       }
     } catch (err) {
       console.error('❌ Failed to send message:', err);
@@ -151,6 +148,17 @@ export default function ChatScreen() {
         <TouchableOpacity onPress={() => router.push('/conversations')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
+
+        {receiverPic ? (
+          <Image source={{ uri: receiverPic }} style={styles.avatar} />
+        ) : (
+          <View style={styles.initialCircle}>
+            <Text style={styles.initialText}>
+              {receiverName?.[0]?.toUpperCase() ?? '?'}
+            </Text>
+          </View>
+        )}
+
         <Text style={styles.headerText} numberOfLines={1}>
           {receiverName}
         </Text>
@@ -207,6 +215,28 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? 40 : 15,
   },
   backButton: { marginRight: 10 },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'white',
+  },
+  initialCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  initialText: {
+    color: '#6D83F2',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
   headerText: {
     fontSize: 18,
     color: 'white',

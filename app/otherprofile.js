@@ -1,65 +1,56 @@
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Dimensions,
-  Image,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import BASE_URL from '../config';
 
-const { width } = Dimensions.get('window');
-
-export default function ProfileScreen() {
+export default function OtherProfileScreen() {
+  const { email } = useLocalSearchParams();
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
 
-  useFocusEffect(
-    useCallback(() => {
-      const fetchUser = async () => {
-        setLoading(true);
-        try {
-          const email = await AsyncStorage.getItem('userEmail');
-          const token = await SecureStore.getItemAsync('jwtToken');
-
-          if (!email || !token) {
-            alert('User not logged in.');
-            router.push('/login');
-            return;
-          }
-
-          const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setUser(data);
-          } else {
-            console.error('Failed to fetch user profile.');
-          }
-        } catch (error) {
-          console.error('Error fetching user:', error);
-        } finally {
-          setLoading(false);
+  useEffect(() => {
+    const fetchUser = async () => {
+      setLoading(true);
+      try {
+        const token = await SecureStore.getItemAsync('jwtToken');
+        if (!token) {
+          alert('Session expired. Please log in again.');
+          router.push('/login');
+          return;
         }
-      };
 
-      fetchUser();
-    }, [])
-  );
+        const response = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        } else {
+          alert('Failed to load user profile.');
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        alert('Something went wrong.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (email) fetchUser();
+  }, [email]);
 
   if (loading) {
     return (
@@ -80,7 +71,7 @@ export default function ProfileScreen() {
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.gradient}>
       <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.push('/home')}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
 
@@ -89,14 +80,10 @@ export default function ProfileScreen() {
             <Image source={{ uri: user.profilePictureUrl }} style={styles.avatar} />
           ) : (
             <View style={styles.initialAvatar}>
-              <Text style={styles.initialText}>
-                {user.firstName?.charAt(0)?.toUpperCase() ?? "?"}
-              </Text>
+              <Text style={styles.initialText}>{user.firstName?.[0]?.toUpperCase() ?? '?'}</Text>
             </View>
           )}
-
           <Text style={styles.name}>{user.firstName} {user.lastName}</Text>
-          <Text style={styles.email}>{user.email}</Text>
         </View>
 
         {user.bio && (
@@ -117,10 +104,6 @@ export default function ProfileScreen() {
             <Text style={styles.info}>{user.skillsWanted}</Text>
           </View>
         )}
-
-        <TouchableOpacity style={styles.editButton} onPress={() => router.push('/editprofile')}>
-          <Text style={styles.editButtonText}>Edit Profile</Text>
-        </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
   );
@@ -133,7 +116,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? 60 : 80,
+    paddingTop: 80,
     paddingBottom: 40,
   },
   centered: {
@@ -144,9 +127,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: Platform.OS === 'android' ? 30 : 50,
+    top: 40,
     left: 20,
-    zIndex: 1,
+    zIndex: 10,
   },
   profileCard: {
     backgroundColor: '#fff',
@@ -190,12 +173,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     textAlign: 'center',
   },
-  email: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-    textAlign: 'center',
-  },
   infoCard: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -217,19 +194,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#333',
     lineHeight: 22,
-  },
-  editButton: {
-    marginTop: 30,
-    backgroundColor: '#6D83F2',
-    paddingVertical: 14,
-    paddingHorizontal: 40,
-    borderRadius: 10,
-    elevation: 3,
-  },
-  editButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
   },
 });

@@ -144,57 +144,66 @@ export default function EditProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity onPress={pickImage}>
-        {editedUser.profilePictureUrl ? (
-          <Image source={{ uri: editedUser.profilePictureUrl }} style={styles.avatar} />
-        ) : (
-          <Text style={styles.uploadText}>Upload Profile Picture</Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={pickImage}>
+          {editedUser.profilePictureUrl ? (
+            <Image source={{ uri: editedUser.profilePictureUrl }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarPlaceholderText}>Upload</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={styles.name}>{editedUser.firstName} {editedUser.lastName}</Text>
+      </View>
 
-      <Text style={styles.label}>First Name</Text>
-      <TextInput
-        style={styles.input}
-        value={editedUser.firstName || ''}
-        onChangeText={(text) => handleFieldChange('firstName', text)}
-      />
+      <View style={styles.form}>
+        <Text style={styles.sectionTitle}>Profile Information</Text>
 
-      <Text style={styles.label}>Last Name</Text>
-      <TextInput
-        style={styles.input}
-        value={editedUser.lastName || ''}
-        onChangeText={(text) => handleFieldChange('lastName', text)}
-      />
+        <Text style={styles.label}>First Name</Text>
+        <TextInput
+          style={styles.input}
+          value={editedUser.firstName || ''}
+          onChangeText={(text) => handleFieldChange('firstName', text)}
+        />
 
-      <Text style={styles.label}>Bio</Text>
-      <TextInput
-        style={styles.input}
-        value={editedUser.bio || ''}
-        onChangeText={(text) => handleFieldChange('bio', text)}
-        multiline
-      />
+        <Text style={styles.label}>Last Name</Text>
+        <TextInput
+          style={styles.input}
+          value={editedUser.lastName || ''}
+          onChangeText={(text) => handleFieldChange('lastName', text)}
+        />
 
-      <Text style={styles.label}>Skills Offered</Text>
-      <TextInput
-        style={styles.input}
-        value={editedUser.skillsOffered || ''}
-        onChangeText={(text) => handleFieldChange('skillsOffered', text)}
-      />
+        <Text style={styles.label}>Bio</Text>
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={editedUser.bio || ''}
+          onChangeText={(text) => handleFieldChange('bio', text)}
+          multiline
+        />
 
-      <Text style={styles.label}>Skills Wanted</Text>
-      <TextInput
-        style={styles.input}
-        value={editedUser.skillsWanted || ''}
-        onChangeText={(text) => handleFieldChange('skillsWanted', text)}
-      />
+        <Text style={styles.label}>Skills Offered</Text>
+        <TextInput
+          style={styles.input}
+          value={editedUser.skillsOffered || ''}
+          onChangeText={(text) => handleFieldChange('skillsOffered', text)}
+        />
 
-      <TouchableOpacity style={styles.saveButton} onPress={handleSaveClick}>
-        <Text style={styles.saveButtonText}>Save Changes</Text>
-      </TouchableOpacity>
+        <Text style={styles.label}>Skills Wanted</Text>
+        <TextInput
+          style={styles.input}
+          value={editedUser.skillsWanted || ''}
+          onChangeText={(text) => handleFieldChange('skillsWanted', text)}
+        />
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backButtonText}>Back to Profile</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSaveClick}>
+          <Text style={styles.saveButtonText}>Save Changes</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Text style={styles.backButtonText}>Back</Text>
+        </TouchableOpacity>
+      </View>
 
       <Modal visible={showPasswordModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
@@ -221,16 +230,50 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 20, backgroundColor: '#F9F9FF' },
+  container: { padding: 20, backgroundColor: '#F0F4FF' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  label: { fontSize: 16, fontWeight: '600', marginTop: 10 },
+  header: { alignItems: 'center', marginBottom: 20 },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderColor: '#6D83F2',
+    borderWidth: 2,
+    marginBottom: 10,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#d6d6fa',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  avatarPlaceholderText: {
+    color: '#6D83F2',
+    fontWeight: 'bold',
+  },
+  name: { fontSize: 20, fontWeight: 'bold', color: '#333' },
+  form: { backgroundColor: 'white', borderRadius: 12, padding: 16, elevation: 4 },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#444',
+  },
+  label: { fontSize: 14, fontWeight: '600', marginTop: 12, marginBottom: 4, color: '#555' },
   input: {
-    backgroundColor: 'white',
+    backgroundColor: '#f9f9f9',
     padding: 10,
     borderRadius: 8,
-    marginBottom: 10,
     borderColor: '#ccc',
     borderWidth: 1,
+    fontSize: 14,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   saveButton: {
     backgroundColor: '#6D83F2',
@@ -245,14 +288,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   backButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#ddd',
     marginTop: 10,
     padding: 12,
     borderRadius: 10,
     alignItems: 'center',
   },
   backButtonText: {
-    color: 'black',
+    color: '#333',
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -279,20 +322,5 @@ const styles = StyleSheet.create({
     color: '#6D83F2',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 10,
-    alignSelf: 'center',
-    borderColor: '#6D83F2',
-    borderWidth: 2,
-  },
-  uploadText: {
-    textAlign: 'center',
-    color: '#6D83F2',
-    fontWeight: 'bold',
-    marginVertical: 12,
   },
 });

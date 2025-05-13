@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons'; // ✅ Back icon
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
@@ -24,18 +24,13 @@ export default function ConversationsScreen() {
   useEffect(() => {
     const fetchPreviews = async () => {
       const email = await AsyncStorage.getItem('userEmail');
-      console.log('📧 Logged in user email:', email); // ✅ Log 1
-
       setMyEmail(email);
-
       try {
         const res = await fetch(`${BASE_URL}/api/messages/previews?email=${email}`);
         const data = await res.json();
-
-        console.log('📨 Raw preview data from backend:', data); // ✅ Log 2
         setPreviews(data);
       } catch (err) {
-        console.error('❌ Failed to fetch conversation previews:', err);
+        console.error('❌ Failed to fetch previews:', err);
       }
     };
 
@@ -44,7 +39,6 @@ export default function ConversationsScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      {/* ✅ Back Button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.push('/home')} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#6D83F2" />
@@ -56,7 +50,12 @@ export default function ConversationsScreen() {
         <Text style={styles.noChats}>No conversations yet.</Text>
       ) : (
         previews.map((item, idx) => {
-          console.log('🧵 Rendering preview:', item); // ✅ Log 3
+          const initials = item.otherUserName
+            ?.split(' ')
+            .map((word) => word[0])
+            .join('')
+            .toUpperCase() || '?';
+
           return (
             <TouchableOpacity
               key={idx}
@@ -69,15 +68,26 @@ export default function ConversationsScreen() {
               }
             >
               <View style={styles.row}>
-                <Image
-                  source={{
-                    uri: item.profilePictureUrl || 'https://via.placeholder.com/50',
-                  }}
-                  style={styles.avatar}
-                  onError={() =>
-                    console.warn(`❌ Failed to load image for ${item.otherUserEmail}`)
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: '/otherprofile',
+                      params: { email: item.otherUserEmail },
+                    })
                   }
-                />
+                >
+                  {item.profilePictureUrl?.trim() ? (
+                    <Image
+                      source={{ uri: item.profilePictureUrl }}
+                      style={styles.avatar}
+                    />
+                  ) : (
+                    <View style={styles.initialCircle}>
+                      <Text style={styles.initialText}>{initials}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+
                 <View style={styles.textContainer}>
                   <View style={styles.rowSpaceBetween}>
                     <Text style={styles.name}>{item.otherUserName}</Text>
@@ -129,6 +139,19 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: '#ccc',
+  },
+  initialCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#6D83F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  initialText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 20,
   },
   textContainer: {
     marginLeft: 12,

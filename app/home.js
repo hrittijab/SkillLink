@@ -3,8 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -20,11 +21,11 @@ export default function HomeScreen() {
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
-
   const [deletePassword, setDeletePassword] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [user, setUser] = useState(null);
 
   const handleGoToExploreSkills = () => router.push('/exploreskills');
   const handleAddPost = () => router.push('/addpost');
@@ -55,14 +56,41 @@ export default function HomeScreen() {
     }
   };
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const email = await AsyncStorage.getItem('userEmail');
+        const token = await SecureStore.getItemAsync('jwtToken');
+        if (!email || !token) return;
+
+        const res = await fetch(`${BASE_URL}/api/users/${encodeURIComponent(email)}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+        }
+      } catch (err) {
+        console.error('Failed to load user:', err);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>
-      {/* Top-right Avatar */}
+      {/* Top-right profile picture */}
       <View style={styles.avatarContainer}>
         <TouchableOpacity onPress={() => setSettingsVisible(true)}>
-          <View style={styles.avatarCircle}>
-            <Ionicons name="person-circle-outline" size={40} color="white" />
-          </View>
+          {user?.profilePictureUrl ? (
+            <Image source={{ uri: user.profilePictureUrl }} style={styles.profileImage} />
+          ) : (
+            <View style={styles.avatarCircle}>
+              <Ionicons name="person-circle-outline" size={40} color="white" />
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -249,17 +277,35 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  avatarContainer: { position: 'absolute', top: 50, right: 20, zIndex: 1 },
-  avatarCircle: { backgroundColor: '#ffffff30', borderRadius: 30, padding: 5 },
+  container: {
+    flex: 1,
+  },
+  avatarContainer: {
+    position: 'absolute',
+    top: 45,
+    right: 20,
+    zIndex: 1,
+  },
+  avatarCircle: {
+    backgroundColor: '#ffffff40',
+    borderRadius: 40,
+    padding: 6,
+  },
+  profileImage: {
+    width: 55,
+    height: 55,
+    borderRadius: 28,
+    borderWidth: 2,
+    borderColor: 'lavender',
+  },
   messagesIconContainer: {
     position: 'absolute',
-    top: 50,
+    top: 45,
     left: 20,
     zIndex: 1,
-    backgroundColor: '#ffffff30',
-    borderRadius: 30,
-    padding: 5,
+    backgroundColor: '#ffffff40',
+    borderRadius: 40,
+    padding: 6,
   },
   innerContainer: {
     flex: 1,
@@ -268,67 +314,90 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
   },
   title: {
-    fontSize: 36,
+    fontSize: 38,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: 'white',
+    fontSize: 18,
+    color: '#f1f1f1',
     textAlign: 'center',
-    marginBottom: 40,
+    marginBottom: 35,
   },
   button: {
     width: '100%',
-    height: 50,
+    height: 52,
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
+    elevation: 4,
   },
   buttonText: {
     color: '#6D83F2',
     fontSize: 18,
     fontWeight: 'bold',
   },
-  buttonPressed: { backgroundColor: '#e0e0e0' },
+  buttonPressed: {
+    backgroundColor: '#f2f2f2',
+  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: '#00000099',
+    backgroundColor: '#00000088',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
-    width: '80%',
+    width: '85%',
     backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 25,
     alignItems: 'center',
   },
-  modalTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
+  },
   modalButton: {
     width: '100%',
-    height: 50,
+    height: 48,
     backgroundColor: '#6D83F2',
-    borderRadius: 10,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 6,
   },
-  modalButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  closeButton: { marginTop: 10 },
-  closeButtonText: { color: '#6D83F2', fontSize: 16, fontWeight: 'bold' },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  closeButton: {
+    marginTop: 10,
+  },
+  closeButtonText: {
+    color: '#6D83F2',
+    fontSize: 15,
+    fontWeight: '600',
+  },
   input: {
     width: '100%',
-    height: 50,
+    height: 48,
     borderColor: '#ccc',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginVertical: 8,
-    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginVertical: 6,
+    backgroundColor: '#fafafa',
   },
 });
+

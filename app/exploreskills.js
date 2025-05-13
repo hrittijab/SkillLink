@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -7,6 +8,8 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -19,6 +22,8 @@ export default function ExploreSkillsScreen() {
   const router = useRouter();
   const [skills, setSkills] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [preferenceFilter, setPreferenceFilter] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [myEmail, setMyEmail] = useState('');
 
@@ -35,106 +40,84 @@ export default function ExploreSkillsScreen() {
     setLoading(true);
     try {
       const token = await SecureStore.getItemAsync('jwtToken');
-      if (!token) {
-        alert('Please log in again.');
-        router.push('/login');
-        return;
-      }
-
       const response = await fetch(`${BASE_URL}/api/skills/all`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        const sortedData = (data || []).sort(
-          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        setSkills(sortedData);
-      } else {
-        alert('Failed to load skills.');
-      }
-    } catch (error) {
-      console.error('Error fetching skills:', error);
-      alert('Error fetching skills.');
+      const data = await response.json();
+      setSkills(data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+    } catch {
+      alert('Failed to load skills.');
     }
     setLoading(false);
   };
 
-  const filteredSkills = skills.filter(skill =>
-    (skill.skillName || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   const timeAgo = (isoString) => {
-    if (!isoString) return '';
     const now = new Date();
     const postTime = new Date(isoString);
-    const diffMinutes = Math.floor((now - postTime) / (1000 * 60));
-
-    if (diffMinutes < 1) return 'just now';
-    if (diffMinutes < 60) return `${diffMinutes} minute(s) ago`;
-    const hours = Math.floor(diffMinutes / 60);
-    if (hours < 24) return `${hours} hour(s) ago`;
-    const days = Math.floor(hours / 24);
-    return `${days} day(s) ago`;
+    const diff = Math.floor((now - postTime) / (1000 * 60));
+    if (diff < 1) return 'just now';
+    if (diff < 60) return `${diff} min ago`;
+    const hrs = Math.floor(diff / 60);
+    if (hrs < 24) return `${hrs} hr ago`;
+    return `${Math.floor(hrs / 24)} day(s) ago`;
   };
 
-  const renderSkillCard = ({ item }) => {
-    if (!item) return null;
+  const filteredSkills = skills.filter((skill) =>
+    (skill.skillName || '').toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (!preferenceFilter || skill.preferenceType === preferenceFilter) &&
+    (!paymentFilter || skill.paymentType === paymentFilter)
+  );
 
+  const renderSkillCard = ({ item }) => {
     const isOwnPost = item.userEmail?.toLowerCase() === myEmail.toLowerCase();
     const isActive = !item.status || item.status.toUpperCase() === 'ACTIVE';
 
     return (
       <View style={styles.card}>
-        <Text style={styles.posterName}>
-          {item.firstName || 'Anonymous'} {item.lastName || ''}
-        </Text>
-
-        <Text style={styles.timeStamp}>
-          {item.createdAt ? timeAgo(item.createdAt) : 'Posted just now'}
-        </Text>
+        <View style={styles.profileRow}>
+          {item.profilePictureUrl?.trim() ? (
+            <Image source={{ uri: item.profilePictureUrl }} style={styles.profilePic} />
+          ) : (
+            <View style={styles.initialCircle}>
+              <Text style={styles.initialText}>{item.firstName?.[0]?.toUpperCase() ?? '?'}</Text>
+            </View>
+          )}
+          <View>
+            <Text style={styles.posterName}>{item.firstName} {item.lastName}</Text>
+            <Text style={styles.timeStamp}>{timeAgo(item.createdAt)}</Text>
+          </View>
+        </View>
 
         <Text style={styles.skillTitle}>{item.skillName}</Text>
+        <Text style={styles.detailsText}>{item.preferenceType} • {item.paymentType}</Text>
 
-        <Text style={styles.detailsText}>
-          <Text style={{ fontWeight: 'bold' }}>{item.preferenceType}</Text> •{' '}
-          <Text style={{ fontWeight: 'bold' }}>{item.paymentType}</Text>
-        </Text>
-
-        {item.paymentType === 'PAID' && item.price != null && (
+        {item.paymentType === 'PAID' && item.price && (
           <Text style={styles.extraDetail}>💰 ${item.price}</Text>
         )}
 
         {item.paymentType === 'EXCHANGE' && item.exchangeSkills && (
           <Text style={styles.extraDetail}>
-            🤝 Exchange for:{' '}
-            {Array.isArray(item.exchangeSkills)
+            🤝 Exchange for: {Array.isArray(item.exchangeSkills)
               ? item.exchangeSkills.join(', ')
               : item.exchangeSkills}
           </Text>
         )}
 
-        {!isOwnPost && (
-          isActive ? (
+        {!isOwnPost && isActive && (
+          <View style={styles.buttonRow}>
             <TouchableOpacity
               style={styles.messageButton}
-              onPress={() =>
-                router.push({
-                  pathname: '/chatscreen',
-                  params: { email: item.userEmail },
-                })
-              }
+              onPress={() => router.push({ pathname: '/chatscreen', params: { email: item.userEmail } })}
             >
               <Text style={styles.messageButtonText}>Message</Text>
             </TouchableOpacity>
-          ) : (
-            <View style={styles.disabledButton}>
-              <Text style={styles.disabledButtonText}>Post Closed</Text>
-            </View>
-          )
+            <TouchableOpacity
+              style={[styles.messageButton, styles.viewButton]}
+              onPress={() => router.push({ pathname: '/otherprofile', params: { email: item.userEmail } })}
+            >
+              <Text style={styles.messageButtonText}>View Profile</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     );
@@ -152,9 +135,41 @@ export default function ExploreSkillsScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Search skills..."
+          placeholderTextColor="#888"
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
+
+        <View style={styles.filterRow}>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={preferenceFilter}
+              onValueChange={(v) => setPreferenceFilter(v)}
+              style={styles.picker}
+              itemStyle={{ fontSize: 7 }}
+              dropdownIconColor="#6D83F2"
+            >
+              <Picker.Item label="All Preferences" value="" />
+              <Picker.Item label="Teach" value="TEACH" />
+              <Picker.Item label="Learn" value="LEARN" />
+            </Picker>
+          </View>
+
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={paymentFilter}
+              onValueChange={(v) => setPaymentFilter(v)}
+              style={styles.picker}
+              itemStyle={{ fontSize: 7 }}
+              dropdownIconColor="#6D83F2"
+            >
+              <Picker.Item label="All Payments" value="" />
+              <Picker.Item label="Free" value="FREE" />
+              <Picker.Item label="Paid" value="PAID" />
+              <Picker.Item label="Exchange" value="EXCHANGE" />
+            </Picker>
+          </View>
+        </View>
 
         {loading ? (
           <ActivityIndicator size="large" color="white" />
@@ -176,17 +191,17 @@ const styles = StyleSheet.create({
   innerContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'android' ? 60 : 80,
   },
   backButton: {
     position: 'absolute',
-    top: 20,
+    top: Platform.OS === 'android' ? 20 : 40,
     left: 20,
     zIndex: 100,
     padding: 10,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
@@ -194,44 +209,93 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 15,
     height: 50,
-    marginBottom: 20,
     fontSize: 16,
+    color: '#333',
+    marginBottom: 12,
+    elevation: 2,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    gap: 10,
+  },
+  pickerWrapper: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderRadius: 7,
+    overflow: 'hidden',
+    elevation: 0,
+    height: 44
+  },
+  picker: {
+    height: 50,
+    color: '#333',
+    paddingVertical: -10, // ✅ Remove excess vertical padding
+  marginVertical: -4, 
   },
   listContent: { paddingBottom: 20 },
   card: {
     backgroundColor: 'white',
     borderRadius: 15,
-    padding: 20,
+    padding: 16,
     marginBottom: 15,
     elevation: 5,
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 6,
   },
-  posterName: { fontSize: 16, fontWeight: '600', color: '#222', marginBottom: 2 },
-  timeStamp: { fontSize: 12, color: '#777', marginBottom: 5 },
-  skillTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 5, color: '#333' },
-  detailsText: { fontSize: 14, marginBottom: 4, color: '#444' },
-  extraDetail: { fontSize: 14, color: '#555', marginTop: 2 },
+  profileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  profilePic: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  initialCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#6D83F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  initialText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  posterName: { fontSize: 16, fontWeight: '600', color: '#222' },
+  timeStamp: { fontSize: 12, color: '#777' },
+  skillTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 4, color: '#333' },
+  detailsText: { fontSize: 14, marginTop: 4, color: '#444' },
+  extraDetail: { fontSize: 14, color: '#555', marginTop: 6 },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+    flexWrap: 'wrap',
+  },
   messageButton: {
     backgroundColor: '#6D83F2',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginTop: 10,
   },
-  messageButtonText: { color: 'white', fontWeight: '600', fontSize: 14 },
-  disabledButton: {
-    backgroundColor: '#ccc',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-    marginTop: 10,
+  viewButton: {
+    backgroundColor: '#A775F2',
   },
-  disabledButtonText: { color: '#666', fontWeight: '600', fontSize: 14 },
+  messageButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });

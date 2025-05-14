@@ -56,5 +56,5 @@ Upcoming Features
 
 - Video uploading options for skills
 
--AI integration to give users suggestions for learning new skills based on their current interests.
+- AI integration to give users suggestions for learning new skills based on their current interests.
 

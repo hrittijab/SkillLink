@@ -1,50 +1,60 @@
-# Welcome to your Expo app 👋
+# SkillLink 
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+SkillLink is a mobile-first skill-exchange platform that empowers users to showcase their talents, find collaborators, and connect with others for mutual learning or service exchange. Built with **React Native (frontend)** and **Spring Boot with AWS (backend)**, the app supports real-time messaging, secure authentication, and customizable skill listings.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Features
 
-   ```bash
-   npm install
-   ```
+-  **User Authentication**
+  - Secure signup/login with bcrypt-hashed passwords
+  - JWT-based session handling
+  - Optional profile picture uploads
 
-2. Start the app
+-  **Profile Management**
+  - Add bio, offered skills, and desired skills
+  - Upload and edit profile picture
+  - View other users’ profiles
 
-   ```bash
-   npx expo start
-   ```
+-  **Skill Posts**
+  - Create, edit, and delete skill exchange posts
+  - Add preferences like:
+    - Skill type (e.g., offering or seeking)
+    - Payment type (paid, exchange, or free)
+    - Price and exchangeable skills
+  - Filter and explore posts
 
-In the output, you'll find options to open the app in a
+-  **Messaging**
+  - Real-time chat using WebSockets
+  - View all conversations in a dedicated screen
+  - Message users directly from posts (except your own)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+-  **Backend Integration**
+  - Spring Boot REST APIs
+  - DynamoDB for user, post, and message data
+  - WebSocket-based message handling
+  - AWS S3 support for profile image uploads (planned/in progress)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+##  Tech Stack
 
-When you're ready, run:
+| Layer        | Technologies                                                    | 
+|--------------|-----------------------------------------------------------------|
+| Frontend     | React Native, Expo, React Navigation, AsyncStorage, SecureStore |
+| Backend      | Spring Boot, WebSocket (STOMP), JWT, BCrypt                     |
+| Database     | AWS DynamoDB                                                    |
+| Cloud Storage| AWS S3 (for profile images)                                     |
+| Dev Tools    | Git, GitHub, Postman, VS Code, Android Studio                   |
 
-```bash
-npm run reset-project
-```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
 
-## Learn more
+Upcoming Features
+- Push notifications for new messages
 
-To learn more about developing your project with Expo, look at the following resources:
+- Email Verification (Currently working on)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Video uploading options for skills
 
-## Join the community
+-AI integration to give users suggestions for learning new skills based on their current interests.
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.

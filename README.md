@@ -1,4 +1,4 @@
-# SkillLink 
+# SkillLink 🌐
 
 SkillLink is a mobile-first skill-exchange platform that empowers users to showcase their talents, find collaborators, and connect with others for mutual learning or service exchange. Built with **React Native (frontend)** and **Spring Boot with AWS (backend)**, the app supports real-time messaging, secure authentication, and customizable skill listings.
 
@@ -15,6 +15,7 @@ SkillLink is a mobile-first skill-exchange platform that empowers users to showc
   - Add bio, offered skills, and desired skills
   - Upload and edit profile picture
   - View other users’ profiles
+  - Pictures stored in AWS S3
 
 -  **Skill Posts**
   - Create, edit, and delete skill exchange posts
@@ -28,6 +29,7 @@ SkillLink is a mobile-first skill-exchange platform that empowers users to showc
   - Real-time chat using WebSockets
   - View all conversations in a dedicated screen
   - Message users directly from posts (except your own)
+  - All messages are stored in PostgreSQL
 
 -  **Backend Integration**
   - Spring Boot REST APIs
@@ -43,10 +45,13 @@ SkillLink is a mobile-first skill-exchange platform that empowers users to showc
 |--------------|-----------------------------------------------------------------|
 | Frontend     | React Native, Expo, React Navigation, AsyncStorage, SecureStore |
 | Backend      | Spring Boot, WebSocket (STOMP), JWT, BCrypt                     |
-| Database     | AWS DynamoDB                                                    |
+| Database     | AWS DynamoDB, PostgreSQL                                        |
 | Cloud Storage| AWS S3 (for profile images)                                     |
 | Dev Tools    | Git, GitHub, Postman, VS Code, Android Studio                   |
 
+**CLICK THE FOLLOWING PICTURE FOR THE DEMO VIDEO**
+
+[![Watch the demo](DemoPic.png)](https://drive.google.com/file/d/1vJofN8zcPZOiF8oIffu0-snSzbEJfZot/view?usp=drive_link)
 
 
 Upcoming Features
@@ -56,5 +61,5 @@ Upcoming Features
 
 - Video uploading options for skills
 
-- AI integration to give users suggestions for learning new skills based on their current interests.
+-AI integration to give users suggestions for learning new skills based on their current interests.
 

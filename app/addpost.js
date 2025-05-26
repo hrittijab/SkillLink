@@ -40,60 +40,72 @@ export default function AddPostScreen() {
 
   // Submit the skill post
   const handleSubmit = async () => {
-    if (!skillName) {
-      Alert.alert('Missing Field', 'Please enter a skill name.');
+  if (!skillName) {
+    Alert.alert('Missing Field', 'Please enter a skill name.');
+    return;
+  }
+
+  try {
+    const userEmail = await AsyncStorage.getItem('userEmail');
+    const token = await SecureStore.getItemAsync('jwtToken');
+
+    if (!userEmail || !token) {
+      Alert.alert('Login Required', 'Please log in again.');
+      router.push('/login');
       return;
     }
 
-    try {
-      const userEmail = await AsyncStorage.getItem('userEmail');
-      const token = await SecureStore.getItemAsync('jwtToken');
+    const payload = { userEmail, skillName, preferenceType, paymentType };
 
-      if (!userEmail || !token) {
-        Alert.alert('Login Required', 'Please log in again.');
-        router.push('/login');
+    if (paymentType === 'PAID') {
+      if (!price) {
+        Alert.alert('Missing Price', 'Please enter a price.');
         return;
       }
-
-      const payload = { userEmail, skillName, preferenceType, paymentType };
-
-      if (paymentType === 'PAID') {
-        if (!price) {
-          Alert.alert('Missing Price', 'Please enter a price.');
-          return;
-        }
-        payload.price = parseFloat(price);
-      }
-
-      if (paymentType === 'EXCHANGE') {
-        if (exchangeSkills.length === 0) {
-          Alert.alert('Missing Skills', 'Please add at least one skill to exchange.');
-          return;
-        }
-        payload.exchangeSkills = exchangeSkills;
-      }
-
-      const res = await fetch(`${BASE_URL}/api/skills/add`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        Alert.alert('Success', result.message || 'Skill posted!');
-        router.replace('/home');
-      } else {
-        Alert.alert('Failed', result.message || 'Something went wrong.');
-      }
-    } catch {
-      Alert.alert('Error', 'Could not submit skill.');
+      payload.price = parseFloat(price);
     }
-  };
+
+    if (paymentType === 'EXCHANGE') {
+      if (exchangeSkills.length === 0) {
+        Alert.alert('Missing Skills', 'Please add at least one skill to exchange.');
+        return;
+      }
+      payload.exchangeSkills = exchangeSkills;
+    }
+
+    const res = await fetch(`${BASE_URL}/api/skills/add`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+
+    if (res.ok) {
+      Alert.alert('Success', result.message || 'Skill posted!');
+      router.replace('/home');
+    } else {
+      Alert.alert(
+        'Failed',
+        result.message || 'Something went wrong.',
+        result.message?.toLowerCase().includes('complete your profile')
+          ? [
+              {
+                text: 'OK',
+                onPress: () => router.push('/editprofile'),
+              },
+            ]
+          : [{ text: 'OK' }]
+      );
+    }
+  } catch {
+    Alert.alert('Error', 'Could not submit skill.');
+  }
+};
+
 
   return (
     <LinearGradient colors={['#6D83F2', '#A775F2']} style={styles.container}>

@@ -49,17 +49,19 @@ SkillLink is a mobile-first skill-exchange platform that empowers users to showc
 | Cloud Storage| AWS S3 (for profile images)                                     |
 | Dev Tools    | Git, GitHub, Postman, VS Code, Android Studio                   |
 
-**CLICK THE FOLLOWING PICTURE FOR THE DEMO VIDEO**
+---
 
-[![Watch the demo](DemoPic.png)](https://drive.google.com/file/d/1vJofN8zcPZOiF8oIffu0-snSzbEJfZot/view?usp=drive_link)
+## 📽️ Demo Video
 
+**Click the image below to watch the demo:**
 
-Upcoming Features
-- Push notifications for new messages
+[![Watch the demo](DemoPic.png)](https://youtu.be/l-zmKJVeKeo)
 
-- Email Verification (Currently working on)
+---
 
-- Video uploading options for skills
+## 🔜 Upcoming Features
 
--AI integration to give users suggestions for learning new skills based on their current interests.
-
+- Push notifications for new messages  
+- Email verification (currently in progress)  
+- Video uploading options for skill previews  
+- AI integration to suggest new skills based on user interests  
